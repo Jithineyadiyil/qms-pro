@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QMS Pro â€” Quality Management System</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0a0b0f;--bg2:#111318;--bgc:#161920;--bgh:#1e2229;--bdr:#252a35;--bdr2:#2e3544;--acc:#00e5a0;--accd:rgba(0,229,160,0.12);--accg:rgba(0,229,160,0.3);--red:#ff4757;--redd:rgba(255,71,87,0.12);--org:#ffa502;--orgd:rgba(255,165,2,0.12);--blu:#3d8ef0;--blud:rgba(61,142,240,0.12);--pur:#8b5cf6;--purd:rgba(139,92,246,0.12);--yel:#f4c430;--tp:#f0f2f5;--ts:#8b9bb4;--tm:#526078;--sw:260px;--hh:64px;--r:12px;--rs:8px;--rl:16px;--sh:0 4px 24px rgba(0,0,0,0.4);--tr:all 0.2s cubic-bezier(0.4,0,0.2,1)}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tp);min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:var(--bg2)}::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:3px}
+.app{display:flex;height:100vh}
+/* SIDEBAR */
+.sb{width:var(--sw);background:var(--bg2);border-right:1px solid var(--bdr);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;overflow-y:auto}
+.sb-logo{padding:20px 20px 16px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:12px}
+.lmark{width:36px;height:36px;background:linear-gradient(135deg,var(--acc),#00c07a);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:13px;color:#000;flex-shrink:0}
+.ltxt h1{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--tp);letter-spacing:-0.3px}
+.ltxt span{font-size:11px;color:var(--tm)}
+.sb-nav{flex:1;padding:12px;overflow-y:auto}
+.ns-label{font-size:10px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--tm);padding:6px 8px 4px;display:block;margin-top:8px}
+.ni{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--rs);cursor:pointer;transition:var(--tr);margin-bottom:2px;color:var(--ts);font-size:13.5px;position:relative}
+.ni:hover{background:var(--bgh);color:var(--tp)}
+.ni.act{background:var(--accd);color:var(--acc);font-weight:500}
+.ni.act::before{content:'';position:absolute;left:0;top:4px;bottom:4px;width:3px;background:var(--acc);border-radius:0 3px 3px 0}
+.ni svg{width:17px;height:17px;flex-shrink:0;opacity:.7}
+.ni.act svg,.ni:hover svg{opacity:1}
+.nbadge{margin-left:auto;background:var(--red);color:white;font-size:10px;font-weight:700;padding:1px 5px;border-radius:20px;min-width:18px;text-align:center}
+.nbadge.o{background:var(--org)}
+.sb-foot{padding:12px;border-top:1px solid var(--bdr)}
+.ucard{display:flex;align-items:center;gap:10px;padding:8px;border-radius:var(--rs);cursor:pointer;transition:var(--tr)}
+.ucard:hover{background:var(--bgh)}
+.uav{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--blu),var(--pur));display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:white;flex-shrink:0}
+/* MAIN */
+.main{flex:1;margin-left:var(--sw);display:flex;flex-direction:column;min-height:100vh}
+.hdr{height:var(--hh);background:var(--bg2);border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:50}
+.hdr-title h2{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;letter-spacing:-0.3px}
+.hdr-title span{font-size:12px;color:var(--tm)}
+.hdr-actions{display:flex;align-items:center;gap:8px}
+.sbar{display:flex;align-items:center;gap:8px;background:var(--bgc);border:1px solid var(--bdr);border-radius:var(--rs);padding:7px 12px;width:260px}
+.sbar input{background:none;border:none;outline:none;color:var(--tp);font-size:13px;width:100%;font-family:'DM Sans',sans-serif}
+.sbar input::placeholder{color:var(--tm)}
+.ibtn{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:var(--rs);background:var(--bgc);border:1px solid var(--bdr);cursor:pointer;transition:var(--tr);color:var(--ts);position:relative}
+.ibtn:hover{background:var(--bgh);color:var(--tp)}
+.ndot{position:absolute;top:6px;right:6px;width:8px;height:8px;background:var(--red);border-radius:50%;border:2px solid var(--bg2)}
+/* PAGE */
+.pg{flex:1;padding:28px;overflow-y:auto}
+/* STATS */
+.sg{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px;margin-bottom:28px}
+.sc{background:var(--bgc);border:1px solid var(--bdr);border-radius:var(--r);padding:20px;display:flex;flex-direction:column;gap:12px;transition:var(--tr);position:relative;overflow:hidden}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:var(--r) var(--r) 0 0}
+.sc.g::before{background:var(--acc)}.sc.r::before{background:var(--red)}.sc.o::before{background:var(--org)}.sc.b::before{background:var(--blu)}.sc.p::before{background:var(--pur)}
+.sc:hover{border-color:var(--bdr2);transform:translateY(-1px);box-shadow:var(--sh)}
+.sc-h{display:flex;align-items:flex-start;justify-content:space-between}
+.sc-t{font-size:11px;font-weight:500;color:var(--tm);text-transform:uppercase;letter-spacing:.5px}
+.sc-i{width:34px;height:34px;border-radius:var(--rs);display:flex;align-items:center;justify-content:center}
+.sc-i.g{background:var(--accd);color:var(--acc)}.sc-i.r{background:var(--redd);color:var(--red)}.sc-i.o{background:var(--orgd);color:var(--org)}.sc-i.b{background:var(--blud);color:var(--blu)}.sc-i.p{background:var(--purd);color:var(--pur)}
+.sc-v{font-family:'Syne',sans-serif;font-size:32px;font-weight:800;color:var(--tp);line-height:1}
+.sc-f{font-size:12px;color:var(--tm)}
+/* CARDS */
+.cg{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px}
+.cg.wide{grid-template-columns:2fr 1fr}
+.card{background:var(--bgc);border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden}
+.ch{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--bdr)}
+.ct{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;letter-spacing:-0.2px}
+.cb{padding:20px}
+/* TABLE */
+.dt{width:100%;border-collapse:collapse}
+.dt th{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--tm);padding:10px 14px;text-align:left;border-bottom:1px solid var(--bdr);white-space:nowrap}
+.dt td{padding:12px 14px;border-bottom:1px solid var(--bdr);font-size:13.5px;color:var(--tp)}
+.dt tr:last-child td{border-bottom:none}
+.dt tbody tr{transition:var(--tr);cursor:pointer}
+.dt tbody tr:hover{background:var(--bgh)}
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;white-space:nowrap;letter-spacing:.2px}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.bg{background:var(--accd);color:var(--acc)}.bg::before{background:var(--acc)}
+.br{background:var(--redd);color:var(--red)}.br::before{background:var(--red)}
+.bo{background:var(--orgd);color:var(--org)}.bo::before{background:var(--org)}
+.bb{background:var(--blud);color:var(--blu)}.bb::before{background:var(--blu)}
+.bp{background:var(--purd);color:var(--pur)}.bp::before{background:var(--pur)}
+.bgr{background:rgba(139,155,180,.1);color:var(--ts)}.bgr::before{background:var(--ts)}
+/* BTNS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--rs);font-family:'DM Sans',sans-serif;font-size:13.5px;font-weight:500;cursor:pointer;transition:var(--tr);border:none;text-decoration:none;white-space:nowrap}
+.btn svg{width:15px;height:15px}
+.btn-p{background:var(--acc);color:#000}.btn-p:hover{background:#00c07a;box-shadow:0 0 0 3px var(--accg)}
+.btn-s{background:var(--bgh);color:var(--tp);border:1px solid var(--bdr)}.btn-s:hover{background:var(--bdr)}
+.btn-g{background:transparent;color:var(--ts)}.btn-g:hover{background:var(--bgh);color:var(--tp)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-sm svg{width:13px;height:13px}
+/* FORMS */
+.fg{margin-bottom:16px}
+.fl{display:block;font-size:11px;font-weight:600;color:var(--ts);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+.fc{width:100%;background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--rs);padding:9px 12px;color:var(--tp);font-size:13.5px;font-family:'DM Sans',sans-serif;transition:var(--tr);outline:none}
+.fc:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--accd)}
+.fc::placeholder{color:var(--tm)}
+textarea.fc{min-height:80px;resize:vertical}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+/* MODAL */
+.mbd{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;animation:fi .15s ease}
+@keyframes fi{from{opacity:0}to{opacity:1}}
+@keyframes su{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.modal{background:var(--bgc);border:1px solid var(--bdr2);border-radius:var(--rl);width:100%;max-width:680px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.6);animation:su .2s ease}
+.modal.lg{max-width:900px}.modal.sm{max-width:480px}
+.mh{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--bdr)}
+.mt{font-family:'Syne',sans-serif;font-size:16px;font-weight:700}
+.mc{width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:var(--rs);background:transparent;border:none;color:var(--tm);cursor:pointer;transition:var(--tr)}
+.mc:hover{background:var(--bgh);color:var(--tp)}
+.mb{padding:24px}
+.mf{padding:16px 24px;border-top:1px solid var(--bdr);display:flex;align-items:center;justify-content:flex-end;gap:10px}
+/* TABS */
+.tabs{display:flex;border-bottom:1px solid var(--bdr);margin-bottom:20px;gap:0;padding:0 4px}
+.tab{padding:10px 16px;font-size:13.5px;font-weight:500;color:var(--tm);cursor:pointer;border-bottom:2px solid transparent;transition:var(--tr);white-space:nowrap;display:flex;align-items:center;gap:6px}
+.tab:hover{color:var(--tp)}
+.tab.act{color:var(--acc);border-bottom-color:var(--acc)}
+.tc{background:var(--bgh);color:var(--tm);font-size:10px;font-weight:600;padding:1px 5px;border-radius:20px}
+.tab.act .tc{background:var(--accd);color:var(--acc)}
+/* FILTERS */
+.fb{display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+.fs{display:flex;align-items:center;gap:6px;background:var(--bgc);border:1px solid var(--bdr);border-radius:var(--rs);padding:7px 10px;flex:1;min-width:200px;max-width:280px}
+.fs input{background:none;border:none;outline:none;color:var(--tp);font-size:12.5px;font-family:'DM Sans',sans-serif;width:100%}
+.fs svg{color:var(--tm);width:14px;height:14px;flex-shrink:0}
+.fsel{background:var(--bgc);border:1px solid var(--bdr);border-radius:var(--rs);padding:7px 10px;color:var(--tp);font-size:12.5px;font-family:'DM Sans',sans-serif;outline:none;cursor:pointer}
+/* PROGRESS */
+.pb{height:6px;background:var(--bdr);border-radius:3px;overflow:hidden}
+.pf{height:100%;border-radius:3px;background:var(--acc);transition:width .5s ease}
+.pf.o{background:var(--org)}.pf.r{background:var(--red)}.pf.b{background:var(--blu)}
+/* TIMELINE */
+.tl{position:relative;padding-left:24px}
+.tl::before{content:'';position:absolute;left:5px;top:6px;bottom:0;width:2px;background:var(--bdr)}
+.tli{position:relative;margin-bottom:18px}
+.tld{position:absolute;left:-24px;top:4px;width:12px;height:12px;border-radius:50%;background:var(--acc);border:2px solid var(--bgc)}
+.tlh{display:flex;align-items:center;gap:8px;margin-bottom:3px}
+.tln{font-size:13px;font-weight:500}
+.tlt{font-size:11px;color:var(--tm);margin-left:auto}
+.tldesc{font-size:12.5px;color:var(--ts);line-height:1.5}
+/* OKR */
+.okrc{background:var(--bgc);border:1px solid var(--bdr);border-radius:var(--r);padding:18px;margin-bottom:12px}
+/* REF */
+.ref{font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--bg2);padding:2px 6px;border-radius:4px;color:var(--acc);border:1px solid var(--bdr)}
+/* LOGIN */
+.lp{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);position:relative;overflow:hidden}
+.lbg{position:absolute;inset:0;background:radial-gradient(ellipse at 20% 50%,rgba(0,229,160,.05),transparent 60%),radial-gradient(ellipse at 80% 20%,rgba(61,142,240,.05),transparent 60%)}
+.lgrid{position:absolute;inset:0;background-image:linear-gradient(var(--bdr) 1px,transparent 1px),linear-gradient(90deg,var(--bdr) 1px,transparent 1px);background-size:40px 40px;opacity:.4}
+.lcard{background:var(--bgc);border:1px solid var(--bdr2);border-radius:var(--rl);padding:40px;width:420px;position:relative;z-index:1;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.llogo{display:flex;align-items:center;gap:12px;margin-bottom:32px}
+.llogo .lmark{width:44px;height:44px;font-size:17px}
+.llogo h1{font-family:'Syne',sans-serif;font-size:22px;font-weight:800}
+.llogo p{font-size:12px;color:var(--tm)}
+/* BAR CHART */
+.bc{display:flex;align-items:flex-end;gap:12px;height:180px;padding-bottom:24px;position:relative}
+.bc::after{content:'';position:absolute;left:0;right:0;bottom:24px;height:1px;background:var(--bdr)}
+.bi{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%}
+.bf{width:100%;border-radius:4px 4px 0 0;transition:height .5s ease;min-height:4px;align-self:flex-end}
+.bl{font-size:10px;color:var(--tm);text-align:center}
+.bv{font-size:10px;font-weight:600;color:var(--ts)}
+@keyframes fsi{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.pg .card,.pg .sc{animation:fsi .3s ease backwards}
+.pg .sc:nth-child(1){animation-delay:.05s}.pg .sc:nth-child(2){animation-delay:.1s}.pg .sc:nth-child(3){animation-delay:.15s}.pg .sc:nth-child(4){animation-delay:.2s}.pg .sc:nth-child(5){animation-delay:.25s}.pg .sc:nth-child(6){animation-delay:.3s}
+.ml-auto{margin-left:auto}
+.toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:999;box-shadow:var(--sh);animation:su .3s ease}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+<!-- LOGIN -->
+<div class="lp" id="lp">
+  <div class="lbg"></div><div class="lgrid"></div>
+  <div class="lcard">
+    <div class="llogo">
+      <div class="lmark">QM</div>
+      <div><h1>QMS Pro</h1><p>Quality Management System</p></div>
+    </div>
+    <h2 style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700;margin-bottom:6px">Welcome back</h2>
+    <p style="font-size:13px;color:var(--tm);margin-bottom:28px">Sign in to access your quality dashboard</p>
+    <div id="login-err" style="display:none;background:#fee2e2;color:#dc2626;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:12px"></div>
+    <div class="fg"><label class="fl">Email address</label><input type="email" class="fc" value="admin@qms.com" id="le"></div>
+    <div class="fg"><label class="fl">Password</label><input type="password" class="fc" value="password" id="lp2" onkeydown="if(event.key==='Enter')login()"></div>
+    <button class="btn btn-p" id="login-btn" style="width:100%;justify-content:center;margin-top:8px" onclick="login()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+      Sign In
+    </button>
+    <p style="text-align:center;margin-top:14px;font-size:12px;color:var(--tm)">Demo: admin@qms.com / password</p>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="ma" style="display:none;width:100%;display:none">
+
+<!-- SIDEBAR -->
+<aside class="sb">
+  <div class="sb-logo">
+    <div class="lmark">QM</div>
+    <div class="ltxt"><h1>QMS Pro</h1><span>Quality Management System</span></div>
+  </div>
+  <nav class="sb-nav">
+    <span class="ns-label">Overview</span>
+    <div class="ni act" onclick="nav('dashboard')" id="n-dashboard">${icon('grid')} Dashboard</div>
+    <span class="ns-label">Quality Modules</span>
+    <div class="ni" onclick="nav('requests')" id="n-requests">${icon('file')} Request Management <span class="nbadge">12</span></div>
+    <div class="ni" onclick="nav('nc')" id="n-nc">${icon('alert')} NC & CAPA <span class="nbadge">8</span></div>
+    <div class="ni" onclick="nav('risk')" id="n-risk">${icon('shield')} Risk Management</div>
+    <div class="ni" onclick="nav('docs')" id="n-docs">${icon('doc')} Document Control <span class="nbadge o">3</span></div>
+    <div class="ni" onclick="nav('audits')" id="n-audits">${icon('check')} Audit Management</div>
+    <span class="ns-label">Stakeholders</span>
+    <div class="ni" onclick="nav('visits')" id="n-visits">${icon('users')} Client & Visit Mgmt</div>
+    <div class="ni" onclick="nav('vendors')" id="n-vendors">${icon('home')} Vendor & Partnerships</div>
+    <div class="ni" onclick="nav('complaints')" id="n-complaints">${icon('msg')} Complaints <span class="nbadge">5</span></div>
+    <span class="ns-label">Performance</span>
+    <div class="ni" onclick="nav('sla')" id="n-sla">${icon('bar')} SLA & OKR Management</div>
+    <div class="ni" onclick="nav('reports')" id="n-reports">${icon('trend')} Reports & Analytics</div>
+    <span class="ns-label">System</span>
+    <div class="ni" onclick="nav('settings')" id="n-settings">${icon('cog')} Settings</div>
+  </nav>
+  <div class="sb-foot">
+    <div class="ucard">
+      <div class="uav">AD</div>
+      <div><div style="font-size:13px;font-weight:500">Admin User</div><div style="font-size:11px;color:var(--tm)">QA Manager</div></div>
+      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:auto;color:var(--tm)"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <header class="hdr">
+    <div class="hdr-title">
+      <h2 id="pt">Dashboard</h2>
+      <span id="ps">Quality Management Overview</span>
+    </div>
+    <div class="hdr-actions">
+      <div class="sbar">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="Search all modules..." id="gs">
+      </div>
+      <div class="ibtn" onclick="showNotif()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="ndot"></span>
+      </div>
+      <button class="btn btn-p btn-sm" onclick="openNew()" id="hab">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New Item
+      </button>
+    </div>
+  </header>
+  <div class="pg" id="pg"></div>
+</main>
+</div><!-- end main app -->
+</div><!-- end app -->
+<div id="mc"></div><!-- modals container -->
+
+<script>
+const D={
+  requests:[
+    {id:1,ref:'REQ-2024-0001',title:'IT Support â€“ VPN Access Issue',cat:'IT Support',requester:'Sarah Johnson',assignee:'Mike Chen',priority:'high',status:'in_progress',due:'2024-02-28'},
+    {id:2,ref:'REQ-2024-0002',title:'Procurement â€“ Office Supplies Q1',cat:'Procurement',requester:'Ahmed Al-Rashid',assignee:'Lisa Park',priority:'medium',status:'pending_approval',due:'2024-03-05'},
+    {id:3,ref:'REQ-2024-0003',title:'HR â€“ ISO 9001 Training Enrollment',cat:'Training',requester:'Fatima Al-Hassan',assignee:null,priority:'low',status:'submitted',due:'2024-03-10'},
+    {id:4,ref:'REQ-2024-0004',title:'Compliance Review â€“ Data Privacy Policy',cat:'Compliance',requester:'James Wilson',assignee:'Emma Roberts',priority:'critical',status:'in_review',due:'2024-02-25'},
+    {id:5,ref:'REQ-2024-0005',title:'Facilities â€“ Meeting Room Renovation',cat:'Facilities',requester:'Tom Brady',assignee:'Jane Smith',priority:'medium',status:'closed',due:'2024-02-20'},
+  ],
+  nc:[
+    {id:1,ref:'NC-2024-0001',title:'Document Version Control Failure',cat:'Documentation',detected:'John Auditor',assigned:'Sara QA',severity:'major',status:'capa_in_progress',source:'internal_audit',date:'2024-02-10'},
+    {id:2,ref:'NC-2024-0002',title:'Customer Complaint â€“ SLA Breach',cat:'Process Non-Conformance',detected:'Client Portal',assigned:'Ahmed Ops',severity:'critical',status:'under_investigation',source:'client_complaint',date:'2024-02-15'},
+    {id:3,ref:'NC-2024-0003',title:'Supplier Delivery Non-Compliance',cat:'Customer Requirement',detected:'Warehouse Team',assigned:'Lisa Supply',severity:'minor',status:'open',source:'supplier_issue',date:'2024-02-18'},
+    {id:4,ref:'NC-2024-0004',title:'Data Security Protocol Breach',cat:'Regulatory Compliance',detected:'IT Security',assigned:'Security Team',severity:'critical',status:'pending_capa',source:'internal_audit',date:'2024-02-05'},
+  ],
+  capas:[
+    {id:1,ref:'CAP-2024-0001',title:'Update Document Control Procedure',type:'corrective',owner:'Sara QA',status:'in_progress',priority:'high',target:'2024-03-15',progress:60},
+    {id:2,ref:'CAP-2024-0002',title:'SLA Monitoring Enhancement',type:'corrective',owner:'Ahmed Ops',status:'open',priority:'critical',target:'2024-02-28',progress:20},
+    {id:3,ref:'CAP-2024-0003',title:'Supplier Qualification Process Improvement',type:'preventive',owner:'Lisa Supply',status:'in_progress',priority:'medium',target:'2024-03-30',progress:45},
+    {id:4,ref:'CAP-2024-0004',title:'Security Awareness Training Program',type:'preventive',owner:'Security Team',status:'effectiveness_review',priority:'critical',target:'2024-02-20',progress:90},
+  ],
+  risks:[
+    {id:1,ref:'RSK-2024-0001',title:'Regulatory Compliance Failure',cat:'Compliance & Legal',owner:'Compliance Team',L:4,I:5,score:20,level:'critical',status:'treatment_in_progress'},
+    {id:2,ref:'RSK-2024-0002',title:'Key Supplier Insolvency',cat:'Operational',owner:'Procurement',L:2,I:4,score:8,level:'medium',status:'monitored'},
+    {id:3,ref:'RSK-2024-0003',title:'Cybersecurity Data Breach',cat:'Technology & Cyber',owner:'IT Security',L:3,I:5,score:15,level:'high',status:'treatment_in_progress'},
+    {id:4,ref:'RSK-2024-0004',title:'Staff Retention â€“ Quality Team',cat:'Operational',owner:'HR Dept',L:3,I:3,score:9,level:'medium',status:'assessed'},
+    {id:5,ref:'RSK-2024-0005',title:'Market Competition Impact',cat:'Strategic',owner:'Senior Management',L:2,I:3,score:6,level:'medium',status:'accepted'},
+  ],
+  docs:[
+    {id:1,no:'QA-POL-001',title:'Quality Management Policy',type:'policy',owner:'QA Manager',status:'approved',ver:'3.0',eff:'2024-01-01',rev:'2024-12-31',cat:'Policies'},
+    {id:2,no:'OPS-PRO-015',title:'Customer Complaint Handling Procedure',type:'procedure',owner:'Operations',status:'approved',ver:'2.1',eff:'2024-01-15',rev:'2025-01-15',cat:'Procedures'},
+    {id:3,no:'IT-WI-008',title:'Data Backup Work Instruction',type:'work_instruction',owner:'IT Team',status:'under_review',ver:'1.2',eff:'2023-08-01',rev:'2024-02-28',cat:'Work Instructions'},
+    {id:4,no:'HR-FT-003',title:'Employee Onboarding Checklist',type:'form',owner:'HR Team',status:'pending_approval',ver:'2.0',eff:null,rev:null,cat:'Forms'},
+    {id:5,no:'QA-MAN-001',title:'QMS Manual',type:'manual',owner:'QA Manager',status:'approved',ver:'4.0',eff:'2024-01-01',rev:'2025-01-01',cat:'Manuals'},
+  ],
+  audits:[
+    {id:1,ref:'AUD-2024-0001',title:'ISO 9001:2015 Internal Audit Q1',type:'internal',auditor:'John Auditor',dept:'All Departments',status:'in_progress',start:'2024-02-19',end:'2024-02-23',result:null},
+    {id:2,ref:'AUD-2024-0002',title:'Supplier Audit â€“ Al Malik Supplies',type:'supplier',auditor:'Emma Roberts',dept:'Procurement',status:'planned',start:'2024-03-05',end:'2024-03-06',result:null},
+    {id:3,ref:'AUD-2023-0012',title:'ISO 9001:2015 Internal Audit Q4',type:'internal',auditor:'John Auditor',dept:'All Departments',status:'closed',start:'2023-11-20',end:'2023-11-24',result:'minor_findings'},
+  ],
+  visits:[
+    {id:1,ref:'VIS-2024-0001',client:'Saudi Aramco Insurance',type:'insurer_audit',purpose:'Annual insurance audit and compliance review',date:'2024-02-22',host:'Ahmed Al-Rashid',status:'confirmed',virtual:false,location:'HQ - Board Room'},
+    {id:2,ref:'VIS-2024-0002',client:'KPMG Advisory',type:'client_visit',purpose:'Q1 performance review and strategic planning',date:'2024-02-26',host:'Maria Garcia',status:'planned',virtual:true,location:''},
+    {id:3,ref:'VIS-2024-0003',client:'Saudi Central Bank',type:'regulatory_inspection',purpose:'Compliance inspection â€“ data handling practices',date:'2024-03-10',host:'Compliance Team',status:'planned',virtual:false,location:'Main Office â€“ Floor 3'},
+  ],
+  sla:[
+    {id:1,name:'Premium Support SLA',client:'Saudi Aramco Insurance',cat:'IT Support',resp:2,res:8,status:'active',pct:94},
+    {id:2,name:'Standard Service SLA',client:'All Clients',cat:'General Services',resp:4,res:48,status:'active',pct:87},
+    {id:3,name:'Complaint Resolution SLA',client:'All',cat:'Complaints',resp:24,res:72,status:'active',pct:78},
+  ],
+  okr:[
+    {id:1,title:'Achieve ISO 9001:2015 Re-certification',type:'company',owner:'CEO',period:'Q1-Q2 2024',status:'active',progress:68,krs:[{t:'Complete all audit preparation tasks',p:80,c:16,target:20,u:'tasks'},{t:'Close all critical CAPAs',p:60,c:3,target:5,u:'CAPAs'},{t:'Document control compliance rate',p:65,c:65,target:100,u:'%'}]},
+    {id:2,title:'Reduce Customer Complaints by 30%',type:'department',owner:'Operations',period:'Q1 2024',status:'active',progress:45,krs:[{t:'Implement new complaint tracking',p:100,c:1,target:1,u:'system'},{t:'Monthly complaint reduction rate',p:45,c:22,target:30,u:'%'}]},
+    {id:3,title:'Improve Vendor Performance Ratings',type:'department',owner:'Procurement',period:'Q1 2024',status:'at_risk',progress:30,krs:[{t:'Vendor evaluation completion rate',p:40,c:8,target:20,u:'evals'},{t:'Avg vendor score improvement',p:20,c:6.8,target:8.0,u:'score'}]},
+  ],
+  vendors:[
+    {id:1,name:'TechSolutions Arabia',code:'TSA-001',type:'service_provider',cat:'Technology & Software',status:'active',risk:'low',qual:'qualified',rating:8.4,country:'Saudi Arabia'},
+    {id:2,name:'Al Malik Supplies Co.',code:'AMS-002',type:'supplier',cat:'Facility Management',status:'active',risk:'medium',qual:'qualified',rating:7.1,country:'Saudi Arabia'},
+    {id:3,name:'Global Logistics Partners',code:'GLP-003',type:'contractor',cat:'Logistics & Transport',status:'active',risk:'high',qual:'pending',rating:6.2,country:'UAE'},
+    {id:4,name:'DataSecure Systems',code:'DSS-004',type:'service_provider',cat:'Technology & Software',status:'approved',risk:'low',qual:'qualified',rating:9.1,country:'Saudi Arabia'},
+  ],
+  complaints:[
+    {id:1,ref:'CMP-2024-0001',title:'Delayed Service Response â€“ Critical System',by:'Ahmed Al-Farsi',btype:'client',cat:'Service Quality',sev:'high',status:'under_investigation',received:'2024-02-18',assignee:'Mike Chen',days:3},
+    {id:2,ref:'CMP-2024-0002',title:'Incorrect Billing â€“ February Invoice',by:'Sarah Johnson',btype:'client',cat:'Billing & Payment',sev:'medium',status:'resolved',received:'2024-02-15',assignee:'Finance Team',days:6},
+    {id:3,ref:'CMP-2024-0003',title:'Staff Conduct â€“ Unprofessional Behavior',by:'Anonymous',btype:'public',cat:'Staff Conduct',sev:'high',status:'acknowledged',received:'2024-02-19',assignee:null,days:1},
+    {id:4,ref:'CMP-2024-0004',title:'System Downtime Impact on Operations',by:'KPMG Advisory',btype:'client',cat:'System & Technology',sev:'critical',status:'escalated',received:'2024-02-17',assignee:'IT Manager',days:4},
+    {id:5,ref:'CMP-2024-0005',title:'Communication Gap â€“ Project Status',by:'Saudi Aramco',btype:'client',cat:'Communication',sev:'low',status:'closed',received:'2024-02-10',assignee:'PM Team',days:0},
+  ]
+};
+
+let CP='dashboard';
+
+function icon(t){const m={grid:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>',file:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',alert:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',shield:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',doc:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>',check:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',users:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',home:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',msg:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',bar:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',trend:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',cog:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M19.07 19.07l-1.41-1.41M4.93 19.07l1.41-1.41M4.93 4.93l1.41 1.41M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>',plus:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'};return `<svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${m[t]?.match(/<svg[^>]*>([\s\S]*)<\/svg>/)?.[1]||''}</svg>`;}
+
+function sb(status){const m={draft:'bgr',submitted:'bb',in_review:'bb',in_progress:'bb',pending_approval:'bo',approved:'bg',rejected:'br',closed:'bgr',open:'br',under_investigation:'bo',pending_capa:'bo',capa_in_progress:'bb',effectiveness_review:'bp',cancelled:'bgr',identified:'bo',assessed:'bo',treatment_in_progress:'bb',monitored:'bg',accepted:'bgr',active:'bg',expired:'br',suspended:'bo',planned:'bb',in_progress:'bb',report_issued:'bp',confirmed:'bg',completed:'bg',received:'bb',acknowledged:'bo',resolved:'bg',escalated:'br',at_risk:'bo',minor_findings:'bo',major_findings:'br',satisfactory:'bg',not_qualified:'bgr',pending:'bo',qualified:'bg',blacklisted:'br',critical:'br',high:'br'};return `<span class="badge ${m[status]||'bgr'}">${status.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}</span>`;}
+function pb(p,color=''){return `<div class="pb"><div class="pf ${color}" style="width:${p}%"></div></div>`;}
+function isDue(d){return d&&new Date(d)<new Date();}
+
+function nav(pg){
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('act'));
+  const el=document.getElementById('n-'+pg);
+  if(el)el.classList.add('act');
+  CP=pg;
+  const titles={dashboard:['Dashboard','Quality Management Overview'],requests:['Request Management','Track and manage all service requests'],nc:['NC & CAPA Management','Non-conformances and corrective/preventive actions'],risk:['Risk Management','Identify, assess and treat organizational risks'],docs:['Document Control','Manage controlled documents and revisions'],audits:['Audit Management','Plan, execute and track audit programs'],visits:['Client & Visit Management','Schedule and record client and insurer visits'],vendors:['Vendor & Partnership Management','Manage supplier relationships and partnerships'],complaints:['Complaints Management','Handle and track customer complaints end-to-end'],sla:['SLA & OKR Management','Service level agreements and key results tracking'],reports:['Reports & Analytics','KPI dashboards and performance insights'],settings:['Settings','System configuration and preferences']};
+  const [t,s]=titles[pg]||[pg,''];
+  document.getElementById('pt').textContent=t;
+  document.getElementById('ps').textContent=s;
+  const pg_el=document.getElementById('pg');
+  pg_el.innerHTML='';
+  pg_el.className='pg';
+  void pg_el.offsetWidth; // force reflow for animation
+  pages[pg]&&pages[pg](pg_el);
+}
+
+// PAGES
+const pages={
+  dashboard(c){c.innerHTML=`
+    <div class="sg">
+      ${scard('Requests Open',12,'b','<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>','3 added this week')}
+      ${scard('NC Issues',8,'o','<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>','2 critical active')}
+      ${scard('Open CAPAs',6,'r','<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>','1 overdue')}
+      ${scard('Critical Risks',4,'p','<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>','Immediate review')}
+      ${scard('Documents',47,'g','<path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/>','3 pending review')}
+      ${scard('Complaints',5,'r','<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>','1 overdue SLA')}
+      ${scard('Audits Active',2,'b','<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>','1 in progress')}
+      ${scard('SLA Compliance','87%','g','<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>','â†“ 3% vs last month')}
+    </div>
+    <div class="cg wide">
+      <div class="card">
+        <div class="ch"><span class="ct">NC & Complaints â€” 6 Month Trend</span></div>
+        <div class="cb"><div class="bc">
+          ${['Sep','Oct','Nov','Dec','Jan','Feb'].map((m,i)=>`<div class="bi"><div style="display:flex;gap:2px;align-items:flex-end;height:100%;width:100%"><div class="bf" style="height:${[40,64,48,72,56,64][i]}%;background:var(--org);flex:1"></div><div class="bf" style="height:${[24,40,32,56,48,40][i]}%;background:var(--red);flex:1"></div></div><div class="bl">${m}</div></div>`).join('')}
+        </div></div>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">Risk Distribution</span></div>
+        <div class="cb">
+          ${[['Critical',4,20,'var(--pur)'],['High',7,35,'var(--red)'],['Medium',10,50,'var(--org)'],['Low',14,70,'var(--acc)']].map(([l,c,p,col])=>`<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px;color:var(--ts)">${l}</span><span style="font-size:12px;font-weight:600;color:${col}">${c}</span></div><div class="pb"><div class="pf" style="width:${p}%;background:${col}"></div></div></div>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="cg">
+      <div class="card">
+        <div class="ch"><span class="ct">Recent Activity</span><button class="btn btn-g btn-sm">View all</button></div>
+        <div class="cb" style="padding-top:8px">
+          <div class="tl">
+            ${[['NC Raised','NC-2024-0004 â€” Data Security Breach (Critical)','John Auditor','10 min ago','var(--red)'],['CAPA Updated','CAP-2024-0002 â€” Progress updated to 40%','Ahmed Ops','1 hour ago','var(--blu)'],['Doc Approved','OPS-PRO-015 â€” Complaint Handling Procedure v2.1','QA Manager','2 hours ago','var(--acc)'],['Complaint Received','CMP-2024-0003 â€” Staff Conduct complaint logged','System','3 hours ago','var(--org)'],['Risk Reviewed','RSK-2024-0003 â€” Cybersecurity risk treatment updated','IT Security','5 hours ago','var(--pur)']].map(([t,d,w,time,col])=>`<div class="tli"><div class="tld" style="background:${col}"></div><div class="tlh"><span class="tln">${t}</span><span class="tlt">${time}</span></div><div class="tldesc">${d}<br><span style="color:var(--tm);font-size:11px">by ${w}</span></div></div>`).join('')}
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">My Action Items</span><span class="badge br">6 pending</span></div>
+        ${[['CAPA Overdue â€” SLA Monitoring Enhancement','CAP-2024-0002','critical','Overdue by 2 days'],['Review Doc â€” Data Backup Work Instruction','IT-WI-008','high','Due Feb 28'],['Investigate â€” CMP-2024-0003','CMP-2024-0003','high','Due today'],['Risk Treatment â€” Cybersecurity Risk','RSK-2024-0003','medium','Due Mar 1'],['Approve Request â€” ISO Training','REQ-2024-0003','low','Pending approval']].map(([t,r,p,d])=>`<div style="display:flex;align-items:flex-start;gap:10px;padding:11px 20px;border-bottom:1px solid var(--bdr);cursor:pointer" onmouseover="this.style.background='var(--bgh)'" onmouseout="this.style.background=''"><div style="width:6px;height:6px;border-radius:50%;background:${p==='critical'?'var(--red)':p==='high'?'var(--org)':'var(--blu)'};margin-top:5px;flex-shrink:0"></div><div style="flex:1"><div style="font-size:13px;color:var(--tp);margin-bottom:2px">${t}</div><div style="display:flex;gap:8px"><span class="ref">${r}</span><span style="font-size:11px;color:var(--tm)">${d}</span></div></div><span class="badge ${p==='critical'?'br':p==='high'?'bo':'bb'}">${p}</span></div>`).join('')}
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:4px">
+      ${[['Request SLA',88,'var(--acc)'],['CAPA Closure',72,'var(--blu)'],['Doc Compliance',94,'var(--acc)'],['Complaint Res.',78,'var(--org)']].map(([l,v,col])=>{const r=45,ci=2*Math.PI*r,off=ci-(v/100)*ci;return `<div class="card"><div class="cb" style="text-align:center"><svg width="120" height="120" viewBox="0 0 120 120" style="transform:rotate(-90deg)"><circle cx="60" cy="60" r="${r}" fill="none" stroke="var(--bdr)" stroke-width="10"/><circle cx="60" cy="60" r="${r}" fill="none" stroke="${col}" stroke-width="10" stroke-linecap="round" stroke-dasharray="${ci}" stroke-dashoffset="${off}"/></svg><div style="margin-top:-70px;margin-bottom:50px;font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:${col}">${v}%</div><div style="font-size:12px;color:var(--ts);font-weight:500">${l}</div></div></div>`;}).join('')}
+    </div>`;
+  },
+
+  requests(c){c.innerHTML=`
+    <div class="tabs">
+      <div class="tab act">All <span class="tc">18</span></div>
+      <div class="tab" onclick="this.parentElement.querySelectorAll('.tab').forEach(t=>t.classList.remove('act'));this.classList.add('act')">My Requests <span class="tc">6</span></div>
+      <div class="tab" onclick="this.parentElement.querySelectorAll('.tab').forEach(t=>t.classList.remove('act'));this.classList.add('act')">Pending Approval <span class="tc">3</span></div>
+      <div class="tab" onclick="this.parentElement.querySelectorAll('.tab').forEach(t=>t.classList.remove('act'));this.classList.add('act')">Overdue <span class="tc">2</span></div>
+    </div>
+    <div class="fb">
+      <div class="fs"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input placeholder="Search requests..."></div>
+      <select class="fsel"><option>All Status</option><option>Draft</option><option>Submitted</option><option>In Progress</option><option>Pending Approval</option><option>Closed</option></select>
+      <select class="fsel"><option>All Priority</option><option>Critical</option><option>High</option><option>Medium</option><option>Low</option></select>
+      <div class="ml-auto" style="display:flex;gap:8px">
+        <button class="btn btn-s btn-sm">Export CSV</button>
+        <button class="btn btn-p btn-sm" onclick="openForm('New Request','request')"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> New Request</button>
+      </div>
+    </div>
+    <div class="card"><table class="dt">
+      <thead><tr><th>Reference</th><th>Title</th><th>Category</th><th>Requester</th><th>Assignee</th><th>Priority</th><th>Status</th><th>Due Date</th></tr></thead>
+      <tbody>${D.requests.map(r=>`<tr onclick="detail('Request',${JSON.stringify(r).replace(/"/g,'&quot;')})"><td><span class="ref">${r.ref}</span></td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.title}</td><td style="font-size:12px;color:var(--ts)">${r.cat}</td><td style="font-size:13px">${r.requester}</td><td style="font-size:13px;color:${r.assignee?'var(--tp)':'var(--tm)'}">${r.assignee||'Unassigned'}</td><td>${sb(r.priority)}</td><td>${sb(r.status)}</td><td style="font-size:12px;color:${isDue(r.due)?'var(--red)':'var(--ts)'}">${r.due}</td></tr>`).join('')}</tbody>
+    </table></div>`;
+  },
+
+  nc(c){c.innerHTML=`
+    <div class="tabs">
+      <div class="tab act">Non-Conformances <span class="tc">4</span></div>
+      <div class="tab" onclick="this.parentElement.querySelectorAll('.tab').forEach(t=>t.classList.remove('act'));this.classList.add('act')">CAPAs <span class="tc">4</span></div>
+    </div>
+    <div class="sg" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
+      ${['Open NCs:8:o','Critical:2:r','CAPA In Progress:6:b','Closed/Month:4:g'].map(s=>{const[l,v,c]=s.split(':');return`<div class="card"><div class="cb" style="display:flex;align-items:center;gap:12px"><div><div style="font-size:11px;color:var(--tm);margin-bottom:2px">${l}</div><div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:${c==='g'?'var(--acc)':c==='r'?'var(--red)':c==='o'?'var(--org)':'var(--blu)'}">${v}</div></div></div></div>`;}).join('')}
+    </div>
+    <div class="fb">
+      <div class="fs"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input placeholder="Search non-conformances..."></div>
+      <select class="fsel"><option>All Severity</option><option>Critical</option><option>Major</option><option>Minor</option></select>
+      <div class="ml-auto"><button class="btn btn-p btn-sm" onclick="openForm('Raise Non-Conformance','nc')"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Raise NC</button></div>
+    </div>
+    <div class="card" style="margin-bottom:20px"><table class="dt">
+      <thead><tr><th>Reference</th><th>Title</th><th>Source</th><th>Severity</th><th>Status</th><th>Detected By</th><th>Assigned To</th><th>Date</th></tr></thead>
+      <tbody>${D.nc.map(n=>`<tr onclick="detail('NC',${JSON.stringify(n).replace(/"/g,'&quot;')})"><td><span class="ref">${n.ref}</span></td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${n.title}</td><td style="font-size:12px;color:var(--ts)">${n.source.replace(/_/g,' ')}</td><td>${sb(n.severity)}</td><td>${sb(n.status)}</td><td style="font-size:13px">${n.detected}</td><td style="font-size:13px">${n.assigned}</td><td style="font-size:12px;color:var(--ts)">${n.date}</td></tr>`).join('')}</tbody>
+    </table></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px"><h3 style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700">Active CAPAs</h3><button class="btn btn-p btn-sm" onclick="openForm('New CAPA','capa')"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> New CAPA</button></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      ${D.capas.map(cap=>{const pc=cap.progress>=80?'var(--acc)':cap.progress>=50?'var(--blu)':'var(--org)';return`<div class="card" style="cursor:pointer" onclick="detail('CAPA',${JSON.stringify(cap).replace(/"/g,'&quot;')})"><div class="cb"><div style="display:flex;justify-content:space-between;margin-bottom:12px"><div><div style="display:flex;gap:8px;align-items:center;margin-bottom:4px"><span class="ref">${cap.ref}</span><span class="badge ${cap.type==='corrective'?'bo':'bb'}">${cap.type}</span></div><div style="font-size:13.5px;font-weight:500">${cap.title}</div></div>${sb(cap.priority)}</div><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:12px;color:var(--tm)">Owner: <span style="color:var(--ts)">${cap.owner}</span></span><span style="font-size:12px;color:${isDue(cap.target)?'var(--red)':'var(--tm)'}">Due: ${cap.target}</span></div><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:11px;color:var(--tm)">Progress</span><span style="font-size:12px;font-weight:700;color:${pc}">${cap.progress}%</span></div>${pb(cap.progress)}<div style="margin-top:10px">${sb(cap.status)}</div></div></div>`;}).join('')}
+    </div>`;
+  },
+
+  risk(c){c.innerHTML=`
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px">
+      <div>
+        <div class="fb">
+          <div class="fs"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input placeholder="Search risks..."></div>
+          <select class="fsel"><option>All Levels</option><option>Critical</option><option>High</option><option>Medium</option><option>Low</option></select>
+          <div class="ml-auto"><button class="btn btn-p btn-sm" onclick="openForm('Add Risk','risk')"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Risk</button></div>
+        </div>
+        <div class="card"><table class="dt">
+          <thead><tr><th>Ref</th><th>Risk</th><th>L</th><th>I</th><th>Score</th><th>Level</th><th>Status</th><th>Owner</th></tr></thead>
+          <tbody>${D.risks.map(r=>`<tr onclick="detail('Risk',${JSON.stringify(r).replace(/"/g,'&quot;')})"><td><span class="ref" style="font-size:10px">${r.ref}</span></td><td style="font-size:13px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.title}</td><td><span style="width:26px;height:26px;border-radius:4px;background:var(--bgh);display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">${r.L}</span></td><td><span style="width:26px;height:26px;border-radius:4px;background:var(--bgh);display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">${r.I}</span></td><td><span style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:${r.score>=15?'var(--red)':r.score>=10?'var(--org)':'var(--acc)'}">${r.score}</span></td><td>${sb(r.level)}</td><td>${sb(r.status)}</td><td style="font-size:12px">${r.owner}</td></tr>`).join('')}</tbody>
+        </table></div>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">Risk Heat Map</span></div>
+        <div class="cb">
+          <div style="font-size:11px;color:var(--tm);margin-bottom:8px;text-align:center">Likelihood Ã— Impact</div>
+          ${heatmap()}
+          <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+            ${[['Critical','var(--purd)','var(--pur)'],['High','var(--redd)','var(--red)'],['Medium','var(--orgd)','var(--org)'],['Low','var(--accd)','var(--acc)']].map(([l,b,c])=>`<span style="display:flex;align-items:center;gap:4px;font-size:10px;color:${c}"><span style="width:10px;height:10px;border-radius:2px;background:${b};display:inline-block"></span>${l}</span>`).join('')}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  },
+
+  docs(c){c.innerHTML=`
+    <div class="sg" style="grid-template-columns:repeat(5,1fr);margin-bottom:20px">
+      ${[['Total',47,'b'],['Approved',38,'g'],['Under Review',5,'o'],['Pending Approval',3,'b'],['Due for Review',7,'r']].map(([l,v,cl])=>`<div class="card"><div class="cb"><div style="font-size:11px;color:var(--tm);margin-bottom:2px">${l}</div><div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:${cl==='g'?'var(--acc)':cl==='r'?'var(--red)':cl==='o'?'var(--org)':'var(--blu)'}">${v}</div></div></div>`).join('')}
+    </div>
+    <div class="fb">
+      <div class="fs"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input placeholder="Search documents..."></div>
+      <select class="fsel"><option>All Types</option><option>Policy</option><option>Procedure</option><option>Work Instruction</option><option>Form</option><option>Manual</option></select>
+      <select class="fsel"><option>All Status</option><option>Draft</option><option>Under Review</option><option>Approved</option><option>Obsolete</option></select>
+      <div class="ml-auto"><button class="btn btn-p btn-sm" onclick="openForm('Upload Document','doc')"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Upload Document</button></div>
+    </div>
+    <div class="card"><table class="dt">
+      <thead><tr><th>Document No.</th><th>Title</th><th>Category</th><th>Type</th><th>Version</th><th>Owner</th><th>Status</th><th>Effective Date</th><th>Review Date</th></tr></thead>
+      <tbody>${D.docs.map(d=>`<tr onclick="detail('Document',${JSON.stringify(d).replace(/"/g,'&quot;')})"><td><span class="ref">${d.no}</span></td><td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.title}</td><td style="font-size:12px;color:var(--ts)">${d.cat}</td><td style="font-size:12px;color:var(--ts)">${d.type.replace(/_/g,' ')}</td><td><span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--acc)">v${d.ver}</span></td><td style="font-size:13px">${d.owner}</td><td>${sb(d.status)}</td><td style="font-size:12px;color:var(--ts)">${d.eff||'â€”'}</td><td style="font-size:12px;color:${d.rev&&isDue(d.rev)?'var(--red)':'var(--ts)'}">${d.rev||'â€”'}</td></tr>`).join('')}</tbody>
+    </table></div>`;
+  },
+
+  audits(c){c.innerHTML=`
+    <div class="sg" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
+      ${[['Planned This Year',12,'b'],['Completed',3,'g'],['In Progress',1,'o'],['Open Findings',14,'r']].map(([l,v,cl])=>`<div class="card"><div class="cb"><div style="font-size:11px;color:var(--tm);margin-bottom:2px">${l}</div><div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:${cl==='g'?'var(--acc)':cl==='r'?'var(--red)':cl==='o'?'var(--org)':'var(--blu)'}">${v}</div></div></div>`).join('')}
+    </div>
+    <div class="fb">
+      <div class="fs"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input placeholder="Search audits..."></div>
+      <select class="fsel"><option>All Types</option><option>Internal</option><option>External</option><option>Supplier</option><option>Regulatory</option></select>
+      <div class="ml-auto"><button class="btn btn-p btn-sm" onclick="openForm('Plan Audit','audit')"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Plan Audit</button></div>
+    </div>
+    <div class="card"><table class="dt">
+      <thead><tr><th>Reference</th><th>Title</th><th>Type</th><th>Lead Auditor</th><th>Department</th><th>Status</th><th>Planned Dates</th><th>Result</th></tr></thead>
+      <tbody>${D.audits.map(a=>`<tr onclick="detail('Audit',${JSON.stringify(a).replace(/"/g,'&quot;')})"><td><span class="ref">${a.ref}</span></td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.title}</td><td>${sb(a.type)}</td><td>${a.auditor}</td><td style="font-size:12px;color:var(--ts)">${a.dept}</td><td>${sb(a.status)}</td><td style="font-size:12px;color:var(--ts)">${a.start} â†’ ${a.end}</td><td>${a.result?sb(a.result):'<span style="color:var(--tm);font-size:12px">Pending</span>'}</td></tr>`).join('')}</tbody>
+    </table></div>`;
+  },
+
+  visits(c){c.innerHTML=`
+    <div class="sg" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
+      ${[['Visits This Month',6,'b'],['Upcoming',3,'o'],['Completed',2,'g'],['Action Items Open',7,'r']].map(([l,v,cl])=>`<div class="card"><div class="cb"><div style="font-size:11px;color:var(--tm);margin-bottom:2px">${l}</div><div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:${cl==='g'?'var(--acc)':cl==='r'?'var(--red)':cl==='o'?'var(--org)':'var(--blu)'}">${v}</div></div></div>`).join('')}
+    </div>
+    <div class="fb">
+      <div class="fs"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input placeholder="Search visits..."></div>
+      <select class="fsel"><option>All Types</option><option>Client Visit</option><option>Insurer Audit</option><option>Regulatory Inspection</option></select>
+      <div class="ml-auto"><button class="btn btn-p btn-sm" onclick="openForm('Schedule Visit','visit')"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Schedule Visit</button></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      ${D.visits.map(v=>{const tc={client_visit:'bb',insurer_audit:'bo',regulatory_inspection:'br',partnership_review:'bp'};return`<div class="card" style="cursor:pointer"><div class="cb" style="display:grid;grid-template-columns:auto 1fr auto;gap:20px;align-items:center"><div style="text-align:center;min-width:55px"><div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--acc);line-height:1">${v.date.split('-')[2]}</div><div style="font-size:11px;color:var(--tm)">${new Date(v.date+'T00:00').toLocaleDateString('en',{month:'short'})}</div></div><div><div style="display:flex;gap:8px;align-items:center;margin-bottom:4px"><span class="badge ${tc[v.type]||'bb'}">${v.type.replace(/_/g,' ')}</span>${v.virtual?'<span class="badge bp">Virtual</span>':''}${sb(v.status)}</div><div style="font-size:15px;font-weight:600;color:var(--tp);margin-bottom:2px">${v.client}</div><div style="font-size:13px;color:var(--ts)">${v.purpose}</div><div style="font-size:12px;color:var(--tm);margin-top:4px">${v.virtual?'ðŸ”— Virtual':v.location} â€¢ Host: ${v.host}</div></div><button class="btn btn-s btn-sm">Details</button></div></div>`}).join('')}
+    </div>`;
+  },
+
+  vendors(c){c.innerHTML=`
+    <div class="sg" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
+      ${[['Total Vendors',24,'b'],['Qualified',18,'g'],['Pending Qualification',4,'o'],['High Risk Vendors',3,'r']].map(([l,v,cl])=>`<div class="card"><div class="cb"><div style="font-size:11px;color:var(--tm);margin-bottom:2px">${l}</div><div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:${cl==='g'?'var(--acc)':cl==='r'?'var(--red)':cl==='o'?'var(--org)':'var(--blu)'}">${v}</div></div></div>`).join('')}
+    </div>
+    <div class="fb">
+      <div class="fs"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input placeholder="Search vendors..."></div>
+      <select class="fsel"><option>All Status</option><option>Active</option><option>Approved</option><option>Suspended</option></select>
+      <select class="fsel"><option>All Risk</option><option>Low</option><option>Medium</option><option>High</option><option>Critical</option></select>
+      <div class="ml-auto"><button class="btn btn-p btn-sm" onclick="openForm('Add Vendor','vendor')"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Vendor</button></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      ${D.vendors.map(v=>{const rc=v.rating>=8.5?'var(--acc)':v.rating>=7?'var(--org)':'var(--red)';return`<div class="card" style="cursor:pointer" onclick="detail('Vendor',${JSON.stringify(v).replace(/"/g,'&quot;')})"><div class="cb"><div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px"><div><div style="font-size:15px;font-weight:600;margin-bottom:4px">${v.name}</div><div style="display:flex;gap:6px;align-items:center"><span class="ref" style="font-size:10px">${v.code}</span><span style="font-size:11px;color:var(--tm)">${v.type.replace(/_/g,' ')}</span></div></div><div style="text-align:right"><div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:${rc}">${v.rating}</div><div style="font-size:10px;color:var(--tm)">/ 10.0</div></div></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">${sb(v.status)}${sb(v.risk)}${sb(v.qual)}</div>${[['Quality',8.5],['Delivery',7.8],['Price',8.2],['Service',v.rating]].map(([l,s])=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><span style="font-size:12px;color:var(--ts);width:60px;flex-shrink:0">${l}</span><div class="pb" style="flex:1"><div class="pf" style="width:${s*10}%;background:${s>=8.5?'var(--acc)':s>=7?'var(--org)':'var(--red)'}"></div></div><span style="font-size:12px;font-weight:600;color:var(--tp);min-width:28px;text-align:right">${s}</span></div>`).join('')}</div></div>`}).join('')}
+    </div>`;
+  },
+
+  complaints(c){c.innerHTML=`
+    <div class="sg" style="grid-template-columns:repeat(5,1fr);margin-bottom:20px">
+      ${[['Total',23,'b'],['Open',8,'o'],['Overdue',2,'r'],['Resolved/Month',7,'g'],['Avg Days','4.2','p']].map(([l,v,cl])=>`<div class="card"><div class="cb"><div style="font-size:11px;color:var(--tm);margin-bottom:2px">${l}</div><div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:${cl==='g'?'var(--acc)':cl==='r'?'var(--red)':cl==='o'?'var(--org)':cl==='p'?'var(--pur)':'var(--blu)'}">${v}</div></div></div>`).join('')}
+    </div>
+    <div class="fb">
+      <div class="fs"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input placeholder="Search complaints..."></div>
+      <select class="fsel"><option>All Severity</option><option>Critical</option><option>High</option><option>Medium</option><option>Low</option></select>
+      <select class="fsel"><option>All Status</option><option>Received</option><option>Acknowledged</option><option>Under Investigation</option><option>Resolved</option><option>Closed</option><option>Escalated</option></select>
+      <div class="ml-auto" style="display:flex;gap:8px"><button class="btn btn-s btn-sm">Export</button><button class="btn btn-p btn-sm" onclick="openForm('Log Complaint','complaint')"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Log Complaint</button></div>
+    </div>
+    <div class="card"><table class="dt">
+      <thead><tr><th>Reference</th><th>Title</th><th>Complainant</th><th>Type</th><th>Category</th><th>Severity</th><th>Status</th><th>Assignee</th><th>Received</th><th>Days</th></tr></thead>
+      <tbody>${D.complaints.map(comp=>`<tr onclick="detail('Complaint',${JSON.stringify(comp).replace(/"/g,'&quot;')})"><td><span class="ref">${comp.ref}</span></td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${comp.title}</td><td style="font-size:13px">${comp.by}</td><td style="font-size:12px;color:var(--ts)">${comp.btype}</td><td style="font-size:12px;color:var(--ts)">${comp.cat}</td><td>${sb(comp.sev)}</td><td>${sb(comp.status)}</td><td style="font-size:13px;color:${comp.assignee?'var(--tp)':'var(--tm)'}">${comp.assignee||'Unassigned'}</td><td style="font-size:12px;color:var(--ts)">${comp.received}</td><td style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:${comp.days>3?'var(--red)':comp.days>0?'var(--org)':'var(--acc)'}">${comp.days}d</td></tr>`).join('')}</tbody>
+    </table></div>`;
+  },
+
+  sla(c){c.innerHTML=`
+    <h3 style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:16px">SLA Compliance Overview</h3>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:28px">
+      ${D.sla.map(s=>{const r=52,ci=2*Math.PI*r,off=ci-(s.pct/100)*ci,col=s.pct>=90?'var(--acc)':s.pct>=80?'var(--blu)':'var(--org)';return`<div class="card"><div class="cb" style="text-align:center"><div style="position:relative;width:140px;height:140px;margin:0 auto 12px"><svg width="140" height="140" viewBox="0 0 140 140" style="transform:rotate(-90deg)"><circle cx="70" cy="70" r="${r}" fill="none" stroke="var(--bdr)" stroke-width="10"/><circle cx="70" cy="70" r="${r}" fill="none" stroke="${col}" stroke-width="10" stroke-linecap="round" stroke-dasharray="${ci}" stroke-dashoffset="${off}"/></svg><div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><span style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:${col}">${s.pct}%</span><span style="font-size:10px;color:var(--tm)">compliance</span></div></div><div style="font-size:13px;font-weight:600;margin-bottom:2px">${s.name}</div><div style="font-size:11px;color:var(--tm)">${s.client}</div><div style="margin-top:10px;display:flex;gap:10px;justify-content:center"><span style="font-size:11px;color:var(--ts)">Response: ${s.resp}h</span><span style="font-size:11px;color:var(--ts)">Resolution: ${s.res}h</span></div></div></div>`}).join('')}
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px"><h3 style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700">OKR Progress â€” Q1 2024</h3><button class="btn btn-p btn-sm" onclick="openForm('Add Objective','okr')"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Objective</button></div>
+    ${D.okr.map(obj=>{const pc=obj.progress>=70?'var(--acc)':obj.progress>=40?'var(--org)':'var(--red)';return`<div class="okrc"><div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px"><div><div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:6px">${obj.title}</div><div style="display:flex;gap:8px"><span class="badge bb">${obj.type}</span><span style="font-size:12px;color:var(--tm)">Owner: ${obj.owner}</span><span style="font-size:12px;color:var(--tm)">${obj.period}</span></div></div><span class="badge ${obj.status==='active'?'bg':obj.status==='at_risk'?'bo':'bb'}">${obj.status.replace('_',' ')}</span></div><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:12px;color:var(--tm)">Overall Progress</span><span style="font-family:'Syne',sans-serif;font-weight:700;color:${pc}">${obj.progress}%</span></div>${pb(obj.progress)}<div style="margin-top:12px;border-top:1px solid var(--bdr);padding-top:12px">${obj.krs.map(kr=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div style="font-size:12px;color:var(--ts);flex:1">${kr.t}</div><div style="flex:1">${pb(kr.p,'')}</div><div style="font-size:11px;color:var(--tm);min-width:80px;text-align:right">${kr.c} / ${kr.target} ${kr.u}</div></div>`).join('')}</div></div>`}).join('')}`;
+  },
+
+  reports(c){c.innerHTML=`
+    <div class="cg" style="margin-bottom:20px">
+      <div class="card">
+        <div class="ch"><span class="ct">Quality KPI Summary</span><button class="btn btn-g btn-sm">Export</button></div>
+        <div class="cb"><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          ${[['NC Closure Rate','85%','target 90%','var(--org)'],['CAPA On-time Closure','72%','target 85%','var(--red)'],['Document Compliance','94%','target 95%','var(--org)'],['Audit Finding Closure','88%','target 100%','var(--org)'],['Complaint SLA','78%','target 90%','var(--red)'],['Risk Treatment','91%','target 85%','var(--acc)']].map(([l,v,t,c])=>`<div style="padding:12px;background:var(--bg2);border-radius:8px"><div style="font-size:11px;color:var(--ts);margin-bottom:4px">${l}</div><div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:${c}">${v}</div><div style="font-size:11px;color:var(--tm)">${t}</div></div>`).join('')}
+        </div></div>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">NC Trend â€” 6 Months</span></div>
+        <div class="cb"><div class="bc">
+          ${['Sep','Oct','Nov','Dec','Jan','Feb'].map((m,i)=>`<div class="bi"><div class="bf" style="height:${[40,64,48,72,56,64][i]}%;background:var(--org)"></div><div class="bl">${m}</div><div class="bv">${[5,8,6,9,7,8][i]}</div></div>`).join('')}
+        </div></div>
+      </div>
+    </div>
+    <div class="cg">
+      <div class="card">
+        <div class="ch"><span class="ct">CAPA Performance</span></div>
+        <div class="cb">
+          ${[['On Track',14,58,'var(--acc)'],['Overdue',3,12,'var(--red)'],['Closed â€” Effective',18,75,'var(--blu)'],['Closed â€” Ineffective',2,8,'var(--org)']].map(([l,c,p,col])=>`<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:12px;color:var(--ts)">${l}</span><span style="font-size:12px;font-weight:600;color:${col}">${c} <span style="color:var(--tm);font-weight:400">(${p}%)</span></span></div>${pb(p)}</div>`).join('')}
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">Vendor Performance</span></div>
+        <div class="cb">
+          ${D.vendors.map(v=>`<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px"><div style="flex:1"><div style="font-size:13px;font-weight:500;margin-bottom:4px">${v.name}</div>${pb(v.rating*10,'')}</div><span style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:${v.rating>=8.5?'var(--acc)':v.rating>=7?'var(--org)':'var(--red)'}">${v.rating}</span></div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+  },
+
+  settings(c){ adminModule(c); }
+};
+
+/* ══════════════════ ADMINISTRATION MODULE ══════════════════ */
+const ADMIN_TABS=[
+  {id:'users',      label:'Users',          icon:'👥'},
+  {id:'departments',label:'Departments',    icon:'🏢'},
+  {id:'roles',      label:'Roles',          icon:'🛡️'},
+  {id:'categories', label:'Categories',     icon:'🏷️'},
+  {id:'templates',  label:'Email Templates',icon:'✉️'},
+  {id:'sysconfig',  label:'System Settings',icon:'⚙️'},
+  {id:'actlog',     label:'Activity Log',   icon:'📋'},
+];
+const PERM_MODULES=[
+  {key:'request',  label:'Requests',   actions:['view','create','approve','close']},
+  {key:'nc',       label:'NC',         actions:['view','create','approve']},
+  {key:'capa',     label:'CAPA',       actions:['view','create','approve']},
+  {key:'risk',     label:'Risk',       actions:['view','create','approve']},
+  {key:'document', label:'Documents',  actions:['view','create','approve']},
+  {key:'audit',    label:'Audits',     actions:['view','create','approve']},
+  {key:'complaint',label:'Complaints', actions:['view','create','approve']},
+  {key:'vendor',   label:'Vendors',    actions:['view','create','approve']},
+  {key:'visit',    label:'Visits',     actions:['view','create']},
+];
+let _adminTab='users', _adminData={users:[],depts:[],roles:[],cats:{},templates:[],settings:[],actlog:[]};
+let _catType='request';
+const CAT_TYPES=['request','nc','risk','document','vendor','complaint'];
+
+function adminModule(c){
+  c.innerHTML=`
+  <style>
+    .adm-wrap{display:flex;gap:0;background:var(--card);border:1px solid var(--bdr);border-radius:14px;overflow:hidden;min-height:600px}
+    .adm-sidebar{width:190px;flex-shrink:0;border-right:1px solid var(--bdr);padding:12px 8px;display:flex;flex-direction:column;gap:2px;background:var(--bg)}
+    .adm-tab{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--ts);transition:.15s;border:none;background:none;width:100%;text-align:left}
+    .adm-tab:hover{background:var(--hover)}
+    .adm-tab.act{background:var(--acc);color:#fff;font-weight:600}
+    .adm-content{flex:1;padding:20px;overflow:auto}
+    .adm-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+    .adm-title{font-size:17px;font-weight:700;color:var(--tp)}
+    .adm-sub{font-size:12px;color:var(--tm);margin-top:2px}
+    .adm-table{width:100%;border-collapse:collapse;font-size:13px}
+    .adm-table th{text-align:left;padding:9px 12px;border-bottom:2px solid var(--bdr);font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--tm);font-weight:600}
+    .adm-table td{padding:10px 12px;border-bottom:1px solid var(--bdr);color:var(--ts)}
+    .adm-table tr:hover td{background:var(--hover)}
+    .adm-card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+    .adm-card{background:var(--bg);border:1px solid var(--bdr);border-radius:12px;padding:14px}
+    .adm-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+    .adm-card-title{font-weight:600;font-size:14px;color:var(--tp)}
+    .adm-card-sub{font-size:12px;color:var(--tm);margin-bottom:8px}
+    .chip{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500;background:var(--hover);color:var(--ts);margin:2px}
+    .chip-blue{background:#dbeafe;color:#1d4ed8}
+    .chip-green{background:#dcfce7;color:#15803d}
+    .chip-red{background:#fee2e2;color:#dc2626}
+    .chip-perm{background:#f3e8ff;color:#7e22ce}
+    .chip-all{background:#fef3c7;color:#92400e}
+    .iact{display:inline-flex;align-items:center;gap:6px}
+    .ibtn{background:none;border:1px solid var(--bdr);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:12px;color:var(--ts)}
+    .ibtn:hover{background:var(--hover)}
+    .ibtn-d:hover{background:#fee2e2;color:#dc2626;border-color:#fca5a5}
+    .cat-tabs{display:flex;gap:4px;margin-bottom:14px;flex-wrap:wrap}
+    .cat-tab{padding:5px 12px;border-radius:6px;border:1px solid var(--bdr);cursor:pointer;font-size:12px;background:var(--bg);color:var(--ts)}
+    .cat-tab.act{background:var(--acc);color:#fff;border-color:var(--acc)}
+    .tpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+    .tpl-card{background:var(--bg);border:1px solid var(--bdr);border-radius:12px;padding:14px;cursor:pointer;transition:.15s}
+    .tpl-card:hover{border-color:var(--acc)}
+    .sg-group{margin-bottom:20px}
+    .sg-group-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tm);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--bdr)}
+    .sg-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bdr)}
+    .sg-label{font-size:13px;color:var(--ts)}
+    .sg-desc{font-size:11px;color:var(--tm)}
+    .toggle{width:42px;height:22px;border-radius:11px;cursor:pointer;position:relative;flex-shrink:0;transition:.2s}
+    .toggle .knob{width:18px;height:18px;border-radius:50%;background:#fff;position:absolute;top:2px;transition:left .2s}
+    .adm-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}
+    .adm-modal{background:var(--card);border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+    .adm-modal-lg{max-width:720px}
+    .adm-mh{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--bdr)}
+    .adm-mt{font-size:16px;font-weight:700;color:var(--tp)}
+    .adm-mb{padding:20px}
+    .adm-mf{display:flex;justify-content:flex-end;gap:8px;padding:14px 20px;border-top:1px solid var(--bdr)}
+    .perm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-top:8px}
+    .perm-mod{background:var(--bg);border:1px solid var(--bdr);border-radius:8px;padding:10px}
+    .perm-mod-head{font-size:12px;font-weight:600;margin-bottom:6px}
+    .perm-acts{display:flex;flex-wrap:wrap;gap:4px}
+    .perm-act{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--ts);padding:2px 6px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg);cursor:pointer}
+    .al-row{padding:10px 12px;border-bottom:1px solid var(--bdr);display:grid;grid-template-columns:140px 120px 1fr 100px;gap:10px;font-size:12px;align-items:center}
+    .al-head{font-weight:600;color:var(--tm);font-size:11px;text-transform:uppercase}
+    .skel{background:linear-gradient(90deg,var(--hover) 25%,var(--bdr) 50%,var(--hover) 75%);background-size:200% 100%;animation:skel 1.2s infinite;border-radius:6px;height:14px}
+    @keyframes skel{0%{background-position:200% 0}100%{background-position:-200% 0}}
+  </style>
+  <div class="adm-wrap">
+    <div class="adm-sidebar" id="adm-sb">
+      ${ADMIN_TABS.map(t=>`<button class="adm-tab${t.id===_adminTab?' act':''}" onclick="admSwitchTab('${t.id}')">${t.icon} ${t.label}</button>`).join('')}
+    </div>
+    <div class="adm-content" id="adm-main">
+      <div class="skel" style="width:200px;margin-bottom:8px"></div>
+      <div class="skel" style="width:320px;height:10px"></div>
+    </div>
+  </div>`;
+  admLoadTab(_adminTab);
+}
+
+function admSwitchTab(t){
+  _adminTab=t;
+  document.querySelectorAll('.adm-tab').forEach(el=>{el.classList.toggle('act',el.textContent.trim().startsWith(ADMIN_TABS.find(x=>x.id===t)?.icon||''));});
+  document.querySelectorAll('.adm-tab').forEach(el=>el.classList.remove('act'));
+  document.querySelectorAll('.adm-tab').forEach(el=>{if(el.onclick?.toString().includes(t))el.classList.add('act');});
+  admLoadTab(t);
+}
+
+function admLoadTab(t){
+  const main=document.getElementById('adm-main');
+  if(!main)return;
+  main.innerHTML='<div style="padding:20px"><div class="skel" style="width:200px;margin-bottom:12px"></div><div class="skel" style="height:10px;width:300px;margin-bottom:20px"></div><div class="skel" style="height:40px;margin-bottom:8px"></div><div class="skel" style="height:40px;margin-bottom:8px"></div><div class="skel" style="height:40px"></div></div>';
+  if(t==='users') admLoadUsers();
+  else if(t==='departments') admLoadDepts();
+  else if(t==='roles') admLoadRoles();
+  else if(t==='categories') admLoadCats();
+  else if(t==='templates') admLoadTemplates();
+  else if(t==='sysconfig') admLoadSettings();
+  else if(t==='actlog') admLoadActLog();
+}
+
+/* ── USERS ── */
+let _uPage=1,_uSearch='',_uRole='',_uDept='';
+async function admLoadUsers(){
+  try{
+    const params=new URLSearchParams({page:_uPage});
+    if(_uSearch)params.set('search',_uSearch);
+    if(_uRole)params.set('role_id',_uRole);
+    if(_uDept)params.set('department_id',_uDept);
+    const [ud,rd,dd]=await Promise.all([
+      api('GET','/admin/users?'+params),
+      _adminData.roles.length?Promise.resolve(_adminData.roles):api('GET','/admin/roles'),
+      _adminData.depts.length?Promise.resolve(_adminData.depts):api('GET','/admin/departments'),
+    ]);
+    if(rd?.data||Array.isArray(rd))_adminData.roles=rd?.data||rd;
+    if(dd?.data||Array.isArray(dd))_adminData.depts=dd?.data||dd;
+    const users=ud?.data||ud||[];
+    const total=ud?.meta?.total||ud?.total||users.length;
+    const lastPage=ud?.meta?.last_page||ud?.last_page||1;
+    renderUsers(users,total,lastPage,_adminData.roles,_adminData.depts);
+  }catch(e){document.getElementById('adm-main').innerHTML='<div style="color:red;padding:20px">Error loading users: '+e.message+'</div>';}
+}
+function renderUsers(users,total,lastPage,roles,depts){
+  const main=document.getElementById('adm-main');
+  if(!main)return;
+  main.innerHTML=`
+  <div class="adm-header">
+    <div><div class="adm-title">Users</div><div class="adm-sub">Manage system users and access</div></div>
+    <button class="btn btn-p btn-sm" onclick="admOpenUserForm(null)">+ Add User</button>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+    <input class="fc" style="flex:1;min-width:160px;padding:7px 10px;font-size:12px" placeholder="Search name, email, ID…" value="${_uSearch}" oninput="_uSearch=this.value;_uPage=1;admLoadUsers()">
+    <select class="fc" style="width:140px;padding:7px;font-size:12px" onchange="_uRole=this.value;_uPage=1;admLoadUsers()">
+      <option value="">All Roles</option>
+      ${roles.map(r=>`<option value="${r.id}"${r.id==_uRole?' selected':''}>${r.name}</option>`).join('')}
+    </select>
+    <select class="fc" style="width:150px;padding:7px;font-size:12px" onchange="_uDept=this.value;_uPage=1;admLoadUsers()">
+      <option value="">All Departments</option>
+      ${depts.map(d=>`<option value="${d.id}"${d.id==_uDept?' selected':''}>${d.name}</option>`).join('')}
+    </select>
+  </div>
+  <table class="adm-table">
+    <thead><tr><th>User</th><th>Role</th><th>Department</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody>
+      ${users.length?users.map(u=>`<tr>
+        <td><div style="display:flex;align-items:center;gap:8px"><div class="uav" style="width:30px;height:30px;font-size:11px;flex-shrink:0">${u.name?.charAt(0)||'?'}</div><div><div style="font-weight:500">${u.name}</div><div style="font-size:11px;color:var(--tm)">${u.email}</div></div></div></td>
+        <td><span class="chip chip-blue">${u.role?.name||'—'}</span></td>
+        <td>${u.department?.name||'—'}</td>
+        <td><span class="chip ${u.is_active?'chip-green':'chip-red'}">${u.is_active?'Active':'Inactive'}</span></td>
+        <td><div class="iact">
+          <button class="ibtn" onclick="admOpenUserForm(${JSON.stringify(u).replace(/"/g,'&quot;')})">Edit</button>
+          <button class="ibtn" onclick="admToggleUser(${u.id},${u.is_active})">${u.is_active?'Disable':'Enable'}</button>
+          <button class="ibtn" onclick="admResetPw(${u.id},'${u.name}')">Reset PW</button>
+        </div></td>
+      </tr>`).join(''):`<tr><td colspan="5" style="text-align:center;color:var(--tm);padding:30px">No users found</td></tr>`}
+    </tbody>
+  </table>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;font-size:12px;color:var(--tm)">
+    <span>${total} total users</span>
+    <div style="display:flex;gap:6px">
+      <button class="ibtn" ${_uPage<=1?'disabled':''} onclick="_uPage--;admLoadUsers()">‹ Prev</button>
+      <span>Page ${_uPage} / ${lastPage}</span>
+      <button class="ibtn" ${_uPage>=lastPage?'disabled':''} onclick="_uPage++;admLoadUsers()">Next ›</button>
+    </div>
+  </div>`;
+}
+let _editUserId=null;
+function admOpenUserForm(u){
+  _editUserId=u?u.id:null;
+  const roles=_adminData.roles||[];
+  const depts=_adminData.depts||[];
+  showAdmModal(u?'Edit User':'New User',`
+    <div class="fr"><div class="fg"><label class="fl">Full Name *</label><input class="fc" id="uf-name" value="${u?.name||''}"></div><div class="fg"><label class="fl">Employee ID</label><input class="fc" id="uf-empid" value="${u?.employee_id||''}"></div></div>
+    <div class="fg"><label class="fl">Email *</label><input class="fc" type="email" id="uf-email" value="${u?.email||''}"></div>
+    <div class="fr"><div class="fg"><label class="fl">Role *</label><select class="fc" id="uf-role">${roles.map(r=>`<option value="${r.id}"${r.id==u?.role_id?' selected':''}>${r.name}</option>`).join('')}</select></div><div class="fg"><label class="fl">Department</label><select class="fc" id="uf-dept"><option value="">None</option>${depts.map(d=>`<option value="${d.id}"${d.id==u?.department_id?' selected':''}>${d.name}</option>`).join('')}</select></div></div>
+    <div class="fg"><label class="fl">Phone</label><input class="fc" id="uf-phone" value="${u?.phone||''}"></div>
+    ${!u?`<div class="fg"><label class="fl">Password *</label><input class="fc" type="password" id="uf-pw"></div>`:''}
+  `,admSubmitUser);
+}
+async function admSubmitUser(){
+  const body={name:$v('uf-name'),email:$v('uf-email'),employee_id:$v('uf-empid'),role_id:$v('uf-role'),department_id:$v('uf-dept')||null,phone:$v('uf-phone')};
+  if(!_editUserId)body.password=$v('uf-pw');
+  try{
+    if(_editUserId)await api('PUT','/admin/users/'+_editUserId,body);
+    else await api('POST','/admin/users',body);
+    closeAdmModal();admLoadUsers();toast('User saved ✓');
+  }catch(e){document.getElementById('adm-merr').textContent=e?.message||'Save failed.';document.getElementById('adm-merr').style.display='block';}
+}
+async function admToggleUser(id,active){
+  await api('POST','/admin/users/'+id+'/toggle',{});
+  admLoadUsers();toast((active?'User disabled':'User enabled')+' ✓');
+}
+let _resetPwId=null;
+function admResetPw(id,name){
+  _resetPwId=id;
+  showAdmModal('Reset Password — '+name,`
+    <div class="fg"><label class="fl">New Password *</label><input class="fc" type="password" id="rpw-pw"></div>
+    <div class="fg"><label class="fl">Confirm Password *</label><input class="fc" type="password" id="rpw-pw2"></div>
+  `,async()=>{
+    const pw=$v('rpw-pw'),pw2=$v('rpw-pw2');
+    if(pw!==pw2){document.getElementById('adm-merr').textContent='Passwords do not match.';document.getElementById('adm-merr').style.display='block';return;}
+    await api('POST','/admin/users/'+_resetPwId+'/reset-password',{password:pw});
+    closeAdmModal();toast('Password reset ✓');
+  });
+}
+
+/* ── DEPARTMENTS ── */
+async function admLoadDepts(){
+  try{
+    const d=await api('GET','/admin/departments');
+    _adminData.depts=Array.isArray(d)?d:(d?.data||[]);
+    renderDepts(_adminData.depts);
+  }catch(e){document.getElementById('adm-main').innerHTML='<div style="color:red;padding:20px">Error: '+e.message+'</div>';}
+}
+function renderDepts(depts){
+  const main=document.getElementById('adm-main');if(!main)return;
+  main.innerHTML=`
+  <div class="adm-header">
+    <div><div class="adm-title">Departments</div><div class="adm-sub">Manage organizational departments</div></div>
+    <button class="btn btn-p btn-sm" onclick="admOpenDeptForm(null)">+ Add Department</button>
+  </div>
+  <div class="adm-card-grid">
+    ${depts.map(d=>`<div class="adm-card">
+      <div class="adm-card-head"><div class="adm-card-title">${d.name}</div><div class="iact"><button class="ibtn" onclick="admOpenDeptForm(${JSON.stringify(d).replace(/"/g,'&quot;')})">Edit</button><button class="ibtn ibtn-d" onclick="admDelDept(${d.id},'${d.name}')">Delete</button></div></div>
+      ${d.description?`<div class="adm-card-sub">${d.description}</div>`:''}
+      <div style="font-size:11px;color:var(--tm)">${d.users_count||0} users</div>
+    </div>`).join('')}
+  </div>`;
+}
+let _editDeptId=null;
+function admOpenDeptForm(d){
+  _editDeptId=d?d.id:null;
+  showAdmModal(d?'Edit Department':'New Department',`
+    <div class="fg"><label class="fl">Name *</label><input class="fc" id="df-name" value="${d?.name||''}"></div>
+    <div class="fg"><label class="fl">Description</label><textarea class="fc" id="df-desc" rows="3">${d?.description||''}</textarea></div>
+  `,admSubmitDept);
+}
+async function admSubmitDept(){
+  const body={name:$v('df-name'),description:$v('df-desc')};
+  try{
+    if(_editDeptId)await api('PUT','/admin/departments/'+_editDeptId,body);
+    else await api('POST','/admin/departments',body);
+    closeAdmModal();admLoadDepts();toast('Department saved ✓');
+  }catch(e){document.getElementById('adm-merr').textContent=e?.message||'Save failed.';document.getElementById('adm-merr').style.display='block';}
+}
+async function admDelDept(id,name){
+  if(!confirm('Delete department "'+name+'"?'))return;
+  try{await api('DELETE','/admin/departments/'+id);admLoadDepts();toast('Deleted ✓');}
+  catch(e){toast('Cannot delete: '+( e?.message||'has users'),'error');}
+}
+
+/* ── ROLES ── */
+async function admLoadRoles(){
+  try{
+    const d=await api('GET','/admin/roles');
+    _adminData.roles=Array.isArray(d)?d:(d?.data||[]);
+    renderRoles(_adminData.roles);
+  }catch(e){document.getElementById('adm-main').innerHTML='<div style="color:red;padding:20px">Error: '+e.message+'</div>';}
+}
+function renderRoles(roles){
+  const main=document.getElementById('adm-main');if(!main)return;
+  main.innerHTML=`
+  <div class="adm-header">
+    <div><div class="adm-title">Roles & Permissions</div><div class="adm-sub">Manage system roles and access levels</div></div>
+    <button class="btn btn-p btn-sm" onclick="admOpenRoleForm(null)">+ Add Role</button>
+  </div>
+  <div class="adm-card-grid">
+    ${roles.map(r=>{
+      const perms=Array.isArray(r.permissions)?r.permissions:[];
+      const isAll=perms.includes('*');
+      return `<div class="adm-card">
+        <div class="adm-card-head"><div class="adm-card-title">${r.name}</div>
+          <div class="iact"><button class="ibtn" onclick="admOpenRoleForm(${JSON.stringify(r).replace(/"/g,'&quot;')})">Edit</button>${r.slug!=='super_admin'?`<button class="ibtn ibtn-d" onclick="admDelRole(${r.id},'${r.name}')">Delete</button>`:''}</div>
+        </div>
+        ${r.description?`<div class="adm-card-sub">${r.description}</div>`:''}
+        <div style="margin-bottom:6px"><span class="chip chip-blue">${r.users_count||0} users</span></div>
+        <div>${isAll?'<span class="chip chip-all">★ Full Access</span>':perms.slice(0,5).map(p=>'<span class="chip chip-perm">'+p+'</span>').join('')+(perms.length>5?'<span class="chip">+' +(perms.length-5)+' more</span>':'')}</div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+let _editRoleId=null,_rolePerms=[];
+function admOpenRoleForm(r){
+  _editRoleId=r?r.id:null;
+  _rolePerms=Array.isArray(r?.permissions)?[...r.permissions]:[];
+  const permHtml=PERM_MODULES.map(m=>`
+    <div class="perm-mod">
+      <div class="perm-mod-head"><label style="display:flex;align-items:center;gap:5px;cursor:pointer">
+        <input type="checkbox" id="wc-${m.key}" ${_rolePerms.includes(m.key+'.*')||_rolePerms.includes('*')?'checked':''} onchange="admToggleWc('${m.key}',this.checked)">
+        ${m.label}
+      </label></div>
+      <div class="perm-acts">
+        ${m.actions.map(a=>`<label class="perm-act"><input type="checkbox" id="pa-${m.key}-${a}" ${_rolePerms.includes(m.key+'.'+a)||_rolePerms.includes(m.key+'.*')||_rolePerms.includes('*')?'checked':''} onchange="admTogglePerm('${m.key}.${a}',this.checked)"> ${a}</label>`).join('')}
+      </div>
+    </div>`).join('');
+  showAdmModal(r?'Edit Role':'New Role',`
+    <div class="fr"><div class="fg"><label class="fl">Role Name *</label><input class="fc" id="rf-name" value="${r?.name||''}"></div><div class="fg"><label class="fl">Description</label><input class="fc" id="rf-desc" value="${r?.description||''}"></div></div>
+    <div class="fg"><label class="fl">Permissions</label><div class="perm-grid">${permHtml}</div></div>
+  `,admSubmitRole,'modal-lg');
+}
+function admToggleWc(mod,checked){
+  const acts=PERM_MODULES.find(m=>m.key===mod)?.actions||[];
+  _rolePerms=_rolePerms.filter(p=>p!==mod+'.*'&&!acts.includes(mod+'.'+p.split('.')[1]));
+  acts.forEach(a=>{document.getElementById('pa-'+mod+'-'+a).checked=checked;_rolePerms=_rolePerms.filter(p=>p!==mod+'.'+a);});
+  if(checked)_rolePerms.push(mod+'.*');
+}
+function admTogglePerm(perm,checked){
+  const mod=perm.split('.')[0];
+  if(_rolePerms.includes(mod+'.*')||_rolePerms.includes('*'))return;
+  if(checked){if(!_rolePerms.includes(perm))_rolePerms.push(perm);}
+  else _rolePerms=_rolePerms.filter(p=>p!==perm);
+}
+async function admSubmitRole(){
+  const body={name:$v('rf-name'),description:$v('rf-desc'),permissions:_rolePerms};
+  try{
+    if(_editRoleId)await api('PUT','/admin/roles/'+_editRoleId,body);
+    else await api('POST','/admin/roles',body);
+    closeAdmModal();admLoadRoles();toast('Role saved ✓');
+  }catch(e){document.getElementById('adm-merr').textContent=e?.message||'Save failed.';document.getElementById('adm-merr').style.display='block';}
+}
+async function admDelRole(id,name){
+  if(!confirm('Delete role "'+name+'"?'))return;
+  try{await api('DELETE','/admin/roles/'+id);admLoadRoles();toast('Deleted ✓');}
+  catch(e){toast('Cannot delete: '+(e?.message||'has users'),'error');}
+}
+
+/* ── CATEGORIES ── */
+async function admLoadCats(){
+  try{
+    if(!_adminData.cats[_catType]){
+      const d=await api('GET','/admin/categories/'+_catType);
+      _adminData.cats[_catType]=Array.isArray(d)?d:(d?.data||[]);
+    }
+    renderCats();
+  }catch(e){document.getElementById('adm-main').innerHTML='<div style="color:red;padding:20px">Error: '+e.message+'</div>';}
+}
+function renderCats(){
+  const main=document.getElementById('adm-main');if(!main)return;
+  const cats=_adminData.cats[_catType]||[];
+  main.innerHTML=`
+  <div class="adm-header">
+    <div><div class="adm-title">Categories</div><div class="adm-sub">Manage categories for each module</div></div>
+    <button class="btn btn-p btn-sm" onclick="admOpenCatForm(null)">+ Add Category</button>
+  </div>
+  <div class="cat-tabs">
+    ${CAT_TYPES.map(t=>`<div class="cat-tab${t===_catType?' act':''}" onclick="admSwitchCat('${t}')">${t.charAt(0).toUpperCase()+t.slice(1)}</div>`).join('')}
+  </div>
+  <table class="adm-table">
+    <thead><tr><th>Name</th><th>Code</th><th>SLA (hrs)</th><th>Active</th><th>Actions</th></tr></thead>
+    <tbody>
+      ${cats.length?cats.map(c=>`<tr>
+        <td>${c.name}</td>
+        <td>${c.code||'—'}</td>
+        <td>${c.sla_hours||'—'}</td>
+        <td><span class="chip ${c.is_active!==false?'chip-green':'chip-red'}">${c.is_active!==false?'Yes':'No'}</span></td>
+        <td><div class="iact"><button class="ibtn" onclick="admOpenCatForm(${JSON.stringify(c).replace(/"/g,'&quot;')})">Edit</button><button class="ibtn ibtn-d" onclick="admDelCat(${c.id},'${c.name}')">Delete</button></div></td>
+      </tr>`).join(''):`<tr><td colspan="5" style="text-align:center;color:var(--tm);padding:20px">No categories</td></tr>`}
+    </tbody>
+  </table>`;
+}
+async function admSwitchCat(t){
+  _catType=t;_adminData.cats[t]=null;
+  await admLoadCats();
+}
+let _editCatId=null;
+function admOpenCatForm(c){
+  _editCatId=c?c.id:null;
+  showAdmModal(c?'Edit Category':'New Category',`
+    <div class="fr"><div class="fg"><label class="fl">Name *</label><input class="fc" id="cf-name" value="${c?.name||''}"></div><div class="fg"><label class="fl">Code</label><input class="fc" id="cf-code" value="${c?.code||''}"></div></div>
+    <div class="fr"><div class="fg"><label class="fl">SLA Hours</label><input class="fc" type="number" id="cf-sla" value="${c?.sla_hours||''}"></div><div class="fg"><label class="fl">Active</label><select class="fc" id="cf-active"><option value="1" ${c?.is_active!==false?'selected':''}>Yes</option><option value="0" ${c?.is_active===false?'selected':''}>No</option></select></div></div>
+    <div class="fg"><label class="fl">Description</label><textarea class="fc" id="cf-desc" rows="2">${c?.description||''}</textarea></div>
+  `,admSubmitCat);
+}
+async function admSubmitCat(){
+  const body={name:$v('cf-name'),code:$v('cf-code'),sla_hours:$v('cf-sla')||null,is_active:$v('cf-active')==='1',description:$v('cf-desc')};
+  try{
+    if(_editCatId)await api('PUT','/admin/categories/'+_catType+'/'+_editCatId,body);
+    else await api('POST','/admin/categories/'+_catType,body);
+    _adminData.cats[_catType]=null;closeAdmModal();admLoadCats();toast('Category saved ✓');
+  }catch(e){document.getElementById('adm-merr').textContent=e?.message||'Save failed.';document.getElementById('adm-merr').style.display='block';}
+}
+async function admDelCat(id,name){
+  if(!confirm('Delete category "'+name+'"?'))return;
+  try{await api('DELETE','/admin/categories/'+_catType+'/'+id);_adminData.cats[_catType]=null;admLoadCats();toast('Deleted ✓');}
+  catch(e){toast('Error deleting','error');}
+}
+
+/* ── EMAIL TEMPLATES ── */
+let _tplModule='';
+async function admLoadTemplates(){
+  try{
+    const d=await api('GET','/admin/email-templates'+(_tplModule?'?module='+_tplModule:''));
+    _adminData.templates=Array.isArray(d)?d:(d?.data||[]);
+    renderTemplates(_adminData.templates);
+  }catch(e){document.getElementById('adm-main').innerHTML='<div style="color:red;padding:20px">Error: '+e.message+'</div>';}
+}
+function renderTemplates(tpls){
+  const main=document.getElementById('adm-main');if(!main)return;
+  const modules=[...new Set(tpls.map(t=>t.module))];
+  main.innerHTML=`
+  <div class="adm-header">
+    <div><div class="adm-title">Email Templates</div><div class="adm-sub">Automated email notifications</div></div>
+    <button class="btn btn-p btn-sm" onclick="admOpenTplForm(null)">+ Add Template</button>
+  </div>
+  <div class="cat-tabs">
+    <div class="cat-tab${!_tplModule?' act':''}" onclick="admFilterTpl('')">All</div>
+    ${modules.map(m=>`<div class="cat-tab${m===_tplModule?' act':''}" onclick="admFilterTpl('${m}')">${m.charAt(0).toUpperCase()+m.slice(1)}</div>`).join('')}
+  </div>
+  <div class="tpl-grid">
+    ${tpls.map(t=>`<div class="tpl-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+        <div style="font-weight:600;font-size:13px">${t.name}</div>
+        <span class="chip ${t.is_active?'chip-green':'chip-red'}">${t.is_active?'Active':'Off'}</span>
+      </div>
+      <div style="font-size:11px;color:var(--tm);margin-bottom:8px">${t.module} · ${(t.trigger_event||'').replace(/_/g,' ')}</div>
+      <div style="font-size:12px;color:var(--ts);margin-bottom:10px">${t.subject}</div>
+      <div class="iact">
+        <button class="ibtn" onclick="admOpenTplForm(${JSON.stringify(t).replace(/"/g,'&quot;')})">Edit</button>
+        <button class="ibtn" onclick="admToggleTpl(${t.id},${t.is_active})">${t.is_active?'Disable':'Enable'}</button>
+        <button class="ibtn ibtn-d" onclick="admDelTpl(${t.id},'${t.name}')">Delete</button>
+      </div>
+    </div>`).join('')}
+  </div>`;
+}
+async function admFilterTpl(m){_tplModule=m;admLoadTemplates();}
+let _editTplId=null;
+function admOpenTplForm(t){
+  _editTplId=t?t.id:null;
+  const modules=['requests','nc','capa','risk','audit','complaints','visits','vendors'];
+  showAdmModal(t?'Edit Template':'New Template',`
+    <div class="fr"><div class="fg"><label class="fl">Name *</label><input class="fc" id="tf-name" value="${t?.name||''}"></div><div class="fg"><label class="fl">Module</label><select class="fc" id="tf-mod">${modules.map(m=>`<option ${m===t?.module?'selected':''}>${m}</option>`).join('')}</select></div></div>
+    <div class="fg"><label class="fl">Trigger Event</label><input class="fc" id="tf-evt" value="${t?.trigger_event||''}" placeholder="e.g. created, approved, overdue"></div>
+    <div class="fg"><label class="fl">Subject *</label><input class="fc" id="tf-sub" value="${t?.subject||''}"></div>
+    <div class="fg"><label class="fl">HTML Body</label><textarea class="fc" id="tf-body" rows="6" style="font-family:monospace;font-size:12px">${(t?.body_html||'').replace(/</g,'&lt;')}</textarea></div>
+    <div class="fg"><label class="fl"><input type="checkbox" id="tf-active" ${t?.is_active!==false?'checked':''}> Active</label></div>
+  `,admSubmitTpl,'modal-lg');
+}
+async function admSubmitTpl(){
+  const body={name:$v('tf-name'),module:$v('tf-mod'),trigger_event:$v('tf-evt'),subject:$v('tf-sub'),body_html:document.getElementById('tf-body')?.value||'',is_active:document.getElementById('tf-active')?.checked};
+  try{
+    if(_editTplId)await api('PUT','/admin/email-templates/'+_editTplId,body);
+    else await api('POST','/admin/email-templates',body);
+    closeAdmModal();admLoadTemplates();toast('Template saved ✓');
+  }catch(e){document.getElementById('adm-merr').textContent=e?.message||'Save failed.';document.getElementById('adm-merr').style.display='block';}
+}
+async function admToggleTpl(id,active){await api('PUT','/admin/email-templates/'+id,{is_active:!active});admLoadTemplates();toast('Updated ✓');}
+async function admDelTpl(id,name){
+  if(!confirm('Delete template "'+name+'"?'))return;
+  try{await api('DELETE','/admin/email-templates/'+id);admLoadTemplates();toast('Deleted ✓');}
+  catch(e){toast('Error','error');}
+}
+
+/* ── SYSTEM SETTINGS ── */
+async function admLoadSettings(){
+  try{
+    const d=await api('GET','/admin/settings');
+    _adminData.settings=Array.isArray(d)?d:(d?.data||[]);
+    renderSettings(_adminData.settings);
+  }catch(e){document.getElementById('adm-main').innerHTML='<div style="color:red;padding:20px">Error: '+e.message+'</div>';}
+}
+function renderSettings(settings){
+  const main=document.getElementById('adm-main');if(!main)return;
+  const groups={};
+  settings.forEach(s=>{if(!groups[s.group])groups[s.group]=[];groups[s.group].push(s);});
+  const changed={};
+  main.innerHTML=`
+  <div class="adm-header">
+    <div><div class="adm-title">System Settings</div><div class="adm-sub">Configure system-wide preferences</div></div>
+    <button class="btn btn-p btn-sm" id="save-settings-btn" onclick="admSaveSettings()">Save Changes</button>
+  </div>
+  ${Object.entries(groups).map(([group,items])=>`
+    <div class="sg-group">
+      <div class="sg-group-title">${group.charAt(0).toUpperCase()+group.slice(1)}</div>
+      ${items.map(s=>{
+        const ctrl=s.type==='boolean'
+          ?`<div class="toggle" id="tgl-${s.key}" style="background:${s.value==='true'?'var(--acc)':'var(--bdr)'}" onclick="admToggleSetting('${s.key}',this)"><div class="knob" style="left:${s.value==='true'?'22':'2'}px"></div></div>`
+          :s.type==='select'
+          ?`<select class="fc" style="width:160px;padding:5px 8px;font-size:12px" onchange="admChangeSetting('${s.key}',this.value)">${(s.options||[]).map(o=>`<option ${o===s.value?'selected':''}>${o}</option>`).join('')}</select>`
+          :s.type==='color'
+          ?`<input type="color" value="${s.value||'#000000'}" style="width:40px;height:28px;border:none;cursor:pointer" onchange="admChangeSetting('${s.key}',this.value)">`
+          :`<input class="fc" style="width:200px;padding:5px 8px;font-size:12px" value="${s.value||''}" onchange="admChangeSetting('${s.key}',this.value)">`;
+        return `<div class="sg-row">
+          <div><div class="sg-label">${s.label}</div>${s.description?`<div class="sg-desc">${s.description}</div>`:''}</div>
+          ${ctrl}
+        </div>`;
+      }).join('')}
+    </div>
+  `).join('')}`;
+}
+const _settingChanges={};
+function admChangeSetting(key,val){_settingChanges[key]=val;}
+function admToggleSetting(key,el){
+  const isOn=el.style.background.includes('acc');
+  el.style.background=isOn?'var(--bdr)':'var(--acc)';
+  el.querySelector('.knob').style.left=isOn?'2px':'22px';
+  _settingChanges[key]=String(!isOn);
+}
+async function admSaveSettings(){
+  const btn=document.getElementById('save-settings-btn');
+  if(btn)btn.textContent='Saving…';
+  try{await api('POST','/admin/settings',{settings:_settingChanges});toast('Settings saved ✓');}
+  catch(e){toast('Save failed','error');}
+  finally{if(btn)btn.textContent='Save Changes';}
+}
+
+/* ── ACTIVITY LOG ── */
+async function admLoadActLog(){
+  try{
+    const d=await api('GET','/admin/activity-log');
+    const logs=d?.data||[];
+    renderActLog(logs,d?.meta?.total||logs.length);
+  }catch(e){document.getElementById('adm-main').innerHTML='<div style="color:red;padding:20px">Error: '+e.message+'</div>';}
+}
+function renderActLog(logs,total){
+  const main=document.getElementById('adm-main');if(!main)return;
+  main.innerHTML=`
+  <div class="adm-header">
+    <div><div class="adm-title">Activity Log</div><div class="adm-sub">${total} total events</div></div>
+  </div>
+  <div class="al-row al-head"><div>Date/Time</div><div>User</div><div>Action</div><div>Module</div></div>
+  ${logs.length?logs.map(l=>`<div class="al-row">
+    <div style="color:var(--tm)">${new Date(l.created_at).toLocaleString()}</div>
+    <div><div>${l.user_name||'System'}</div><div style="font-size:10px;color:var(--tm)">${l.user_email||''}</div></div>
+    <div>${l.action||l.description||'—'}</div>
+    <div><span class="chip">${l.module||l.model_type?.split('\\').pop()||'—'}</span></div>
+  </div>`).join(''):`<div style="text-align:center;padding:40px;color:var(--tm)">No activity records</div>`}`;
+}
+
+/* ── MODAL HELPER ── */
+function showAdmModal(title,body,onSave,extraClass=''){
+  const existing=document.getElementById('adm-modal-bg');
+  if(existing)existing.remove();
+  const bg=document.createElement('div');
+  bg.id='adm-modal-bg';
+  bg.className='adm-modal-bg';
+  bg.innerHTML=`<div class="adm-modal ${extraClass}" onclick="event.stopPropagation()">
+    <div class="adm-mh"><div class="adm-mt">${title}</div><button class="ibtn" onclick="closeAdmModal()">✕</button></div>
+    <div class="adm-mb">
+      <div id="adm-merr" style="display:none;background:#fee2e2;color:#dc2626;padding:8px 12px;border-radius:6px;margin-bottom:12px;font-size:13px"></div>
+      ${body}
+    </div>
+    <div class="adm-mf"><button class="btn btn-g btn-sm" onclick="closeAdmModal()">Cancel</button><button class="btn btn-p btn-sm" onclick="admModalSave()">Save</button></div>
+  </div>`;
+  bg.onclick=closeAdmModal;
+  document.body.appendChild(bg);
+  window._admModalSave=onSave;
+}
+function admModalSave(){if(window._admModalSave)window._admModalSave();}
+function closeAdmModal(){const el=document.getElementById('adm-modal-bg');if(el)el.remove();}
+function $v(id){return document.getElementById(id)?.value?.trim()||'';}
+
+function scard(title,value,color,svg,sub){return`<div class="sc ${color}"><div class="sc-h"><div class="sc-t">${title}</div><div class="sc-i ${color}"><svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${svg}</svg></div></div><div class="sc-v">${value}</div><div class="sc-f">${sub}</div></div>`;}
+
+function heatmap(){
+  const data=[[0,0,0,1,0],[0,1,0,0,1],[0,0,1,0,0],[1,0,0,1,0],[0,1,0,0,0]];
+  const cls=(L,I)=>{const s=L*I;return s>=20?'br':s>=12?'bo':s>=6?'bb':'bg';};
+  let h='<div style="display:grid;grid-template-columns:24px repeat(5,1fr);grid-template-rows:repeat(5,36px) 24px;gap:3px">';
+  for(let L=5;L>=1;L--){h+=`<div style="display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--tm)">${L}</div>`;for(let I=1;I<=5;I++){const cnt=data[5-L][I-1];h+=`<div class="badge ${cls(L,I)}" style="border-radius:4px;justify-content:center;cursor:pointer;font-size:11px" title="L:${L} I:${I} Score:${L*I}">${cnt?cnt:''}</div>`;}}
+  h+=`<div></div>${[1,2,3,4,5].map(i=>`<div style="display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--tm)">${i}</div>`).join('')}`;
+  return h+'</div>';
+}
+
+function detail(type,data){
+  if(typeof data==='string')data=JSON.parse(data.replace(/&quot;/g,'"'));
+  const pairs=Object.entries(data).map(([k,v])=>`<div style="padding:8px 0;border-bottom:1px solid var(--bdr)"><div style="font-size:10px;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">${k.replace(/_/g,' ')}</div><div style="font-size:13.5px;color:var(--tp)">${v===null||v===undefined?'â€”':String(v)}</div></div>`).join('');
+  modal(`${type} Detail`,`<div style="display:grid;grid-template-columns:1fr 1fr;gap:0">${pairs}</div><div style="display:flex;gap:8px;margin-top:16px;padding-top:16px;border-top:1px solid var(--bdr)"><button class="btn btn-p btn-sm">Edit</button><button class="btn btn-s btn-sm">Add Comment</button><button class="btn btn-s btn-sm">View History</button></div>`,true);
+}
+
+const forms={
+  request:`<div class="fg"><label class="fl">Title</label><input class="fc" placeholder="Request title..."></div><div class="fr"><div class="fg"><label class="fl">Category</label><select class="fc"><option>IT Support</option><option>Procurement</option><option>Training</option><option>Compliance</option><option>Facilities</option></select></div><div class="fg"><label class="fl">Priority</label><select class="fc"><option>Low</option><option selected>Medium</option><option>High</option><option>Critical</option></select></div></div><div class="fg"><label class="fl">Description</label><textarea class="fc" rows="4" placeholder="Detailed description..."></textarea></div><div class="fr"><div class="fg"><label class="fl">Assignee</label><select class="fc"><option>-- Select --</option><option>Mike Chen</option><option>Lisa Park</option><option>Emma Roberts</option></select></div><div class="fg"><label class="fl">Due Date</label><input type="date" class="fc"></div></div>`,
+  nc:`<div class="fg"><label class="fl">Title</label><input class="fc" placeholder="Non-conformance title..."></div><div class="fr"><div class="fg"><label class="fl">Category</label><select class="fc"><option>Documentation</option><option>Process</option><option>Product/Service</option><option>Regulatory</option></select></div><div class="fg"><label class="fl">Severity</label><select class="fc"><option>Minor</option><option>Major</option><option>Critical</option></select></div></div><div class="fr"><div class="fg"><label class="fl">Source</label><select class="fc"><option>Internal Audit</option><option>Client Complaint</option><option>Supplier Issue</option><option>Regulatory</option></select></div><div class="fg"><label class="fl">Detection Date</label><input type="date" class="fc"></div></div><div class="fg"><label class="fl">Description</label><textarea class="fc" rows="3" placeholder="Describe the non-conformance in detail..."></textarea></div><div class="fg"><label class="fl">Immediate Action Taken</label><textarea class="fc" rows="2" placeholder="What immediate action was taken?"></textarea></div><div class="fg"><label class="fl">Assigned To</label><select class="fc"><option>Sara QA</option><option>Ahmed Ops</option><option>IT Security</option></select></div>`,
+  capa:`<div class="fg"><label class="fl">CAPA Type</label><div style="display:flex;gap:16px;padding:8px"><label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px"><input type="radio" name="ct" checked> Corrective Action</label><label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px"><input type="radio" name="ct"> Preventive Action</label></div></div><div class="fg"><label class="fl">Title</label><input class="fc" placeholder="CAPA title..."></div><div class="fr"><div class="fg"><label class="fl">Priority</label><select class="fc"><option>Low</option><option>Medium</option><option selected>High</option><option>Critical</option></select></div><div class="fg"><label class="fl">Owner</label><select class="fc"><option>Sara QA</option><option>Ahmed Ops</option></select></div></div><div class="fr"><div class="fg"><label class="fl">Target Date</label><input type="date" class="fc"></div><div class="fg"><label class="fl">Link to NC</label><select class="fc"><option>None</option><option>NC-2024-0001</option><option>NC-2024-0002</option></select></div></div><div class="fg"><label class="fl">Root Cause Analysis</label><textarea class="fc" rows="3" placeholder="5-Why or fishbone analysis..."></textarea></div><div class="fg"><label class="fl">Action Plan</label><textarea class="fc" rows="3" placeholder="Steps to address the root cause..."></textarea></div>`,
+  complaint:`<div class="fr"><div class="fg"><label class="fl">Complainant Name</label><input class="fc" placeholder="Full name"></div><div class="fg"><label class="fl">Complainant Type</label><select class="fc"><option>Client</option><option>Vendor</option><option>Employee</option><option>Public</option><option>Regulator</option></select></div></div><div class="fr"><div class="fg"><label class="fl">Email</label><input type="email" class="fc" placeholder="email@example.com"></div><div class="fg"><label class="fl">Phone</label><input class="fc" placeholder="+966 XX XXX XXXX"></div></div><div class="fg"><label class="fl">Complaint Title</label><input class="fc" placeholder="Brief description..."></div><div class="fg"><label class="fl">Full Description</label><textarea class="fc" rows="4" placeholder="Provide full details of the complaint..."></textarea></div><div class="fr"><div class="fg"><label class="fl">Category</label><select class="fc"><option>Service Quality</option><option>Billing & Payment</option><option>Staff Conduct</option><option>System & Technology</option><option>Communication</option></select></div><div class="fg"><label class="fl">Severity</label><select class="fc"><option>Low</option><option selected>Medium</option><option>High</option><option>Critical</option></select></div></div><div class="fr"><div class="fg"><label class="fl">Source</label><select class="fc"><option>Email</option><option>Phone</option><option>Web Form</option><option>In Person</option></select></div><div class="fg"><label class="fl">Is Regulatory?</label><select class="fc"><option>No</option><option>Yes</option></select></div></div>`,
+  risk:`<div class="fg"><label class="fl">Risk Title</label><input class="fc" placeholder="Describe the risk..."></div><div class="fr"><div class="fg"><label class="fl">Risk Type</label><select class="fc"><option>Strategic</option><option>Operational</option><option>Financial</option><option>Compliance</option><option>Technology</option></select></div><div class="fg"><label class="fl">Owner</label><select class="fc"><option>QA Manager</option><option>IT Security</option><option>Compliance Team</option><option>HR Dept</option></select></div></div><div class="fr"><div class="fg"><label class="fl">Likelihood (1-5)</label><select class="fc"><option>1 â€” Rare</option><option>2 â€” Unlikely</option><option selected>3 â€” Possible</option><option>4 â€” Likely</option><option>5 â€” Almost Certain</option></select></div><div class="fg"><label class="fl">Impact (1-5)</label><select class="fc"><option>1 â€” Negligible</option><option>2 â€” Minor</option><option selected>3 â€” Moderate</option><option>4 â€” Major</option><option>5 â€” Catastrophic</option></select></div></div><div class="fg"><label class="fl">Description</label><textarea class="fc" rows="3"></textarea></div><div class="fg"><label class="fl">Treatment Strategy</label><select class="fc"><option>Avoid</option><option selected>Mitigate</option><option>Transfer</option><option>Accept</option></select></div><div class="fg"><label class="fl">Treatment Plan</label><textarea class="fc" rows="3"></textarea></div>`,
+  doc:`<div class="fg"><label class="fl">Document Title</label><input class="fc" placeholder="Full document title..."></div><div class="fr"><div class="fg"><label class="fl">Category</label><select class="fc"><option>Policies</option><option>Procedures</option><option>Work Instructions</option><option>Forms & Templates</option><option>Manuals</option></select></div><div class="fg"><label class="fl">Type</label><select class="fc"><option>Policy</option><option>Procedure</option><option>Work Instruction</option><option>Form</option><option>Manual</option></select></div></div><div class="fr"><div class="fg"><label class="fl">Owner</label><select class="fc"><option>QA Manager</option><option>IT Team</option><option>HR Team</option><option>Operations</option></select></div><div class="fg"><label class="fl">Reviewer</label><select class="fc"><option>-- Select --</option><option>QA Manager</option><option>Dept Head</option></select></div></div><div class="fg"><label class="fl">Upload File</label><input type="file" class="fc" style="padding:6px"></div><div class="fg"><label class="fl">Description</label><textarea class="fc" rows="3"></textarea></div>`,
+  audit:`<div class="fg"><label class="fl">Audit Title</label><input class="fc" placeholder="Audit title..."></div><div class="fr"><div class="fg"><label class="fl">Audit Type</label><select class="fc"><option>Internal</option><option>External</option><option>Supplier</option><option>Regulatory</option><option>Process</option></select></div><div class="fg"><label class="fl">Lead Auditor</label><select class="fc"><option>John Auditor</option><option>Emma Roberts</option><option>Sara QA</option></select></div></div><div class="fg"><label class="fl">Scope</label><textarea class="fc" rows="2" placeholder="What will be audited?"></textarea></div><div class="fg"><label class="fl">Criteria</label><textarea class="fc" rows="2" placeholder="Standards, procedures, etc."></textarea></div><div class="fr"><div class="fg"><label class="fl">Start Date</label><input type="date" class="fc"></div><div class="fg"><label class="fl">End Date</label><input type="date" class="fc"></div></div><div class="fg"><label class="fl">Department</label><select class="fc"><option>All Departments</option><option>QA</option><option>Operations</option><option>IT</option><option>Procurement</option></select></div>`,
+  visit:`<div class="fr"><div class="fg"><label class="fl">Client / Insurer</label><select class="fc"><option>Saudi Aramco Insurance</option><option>KPMG Advisory</option><option>Saudi Central Bank</option><option>New Client...</option></select></div><div class="fg"><label class="fl">Visit Type</label><select class="fc"><option>Client Visit</option><option>Insurer Audit</option><option>Regulatory Inspection</option><option>Partnership Review</option></select></div></div><div class="fg"><label class="fl">Purpose</label><textarea class="fc" rows="2" placeholder="Purpose and objectives of the visit..."></textarea></div><div class="fr"><div class="fg"><label class="fl">Visit Date</label><input type="date" class="fc"></div><div class="fg"><label class="fl">Location</label><input class="fc" placeholder="HQ or virtual meeting link"></div></div><div class="fr"><div class="fg"><label class="fl">Host</label><select class="fc"><option>QA Manager</option><option>Ahmed Al-Rashid</option><option>Maria Garcia</option></select></div><div class="fg"><label class="fl">Is Virtual?</label><select class="fc"><option>No â€” In-Person</option><option>Yes â€” Virtual</option></select></div></div><div class="fg"><label class="fl">Agenda</label><textarea class="fc" rows="3" placeholder="Meeting agenda points..."></textarea></div>`,
+  vendor:`<div class="fg"><label class="fl">Vendor Name</label><input class="fc" placeholder="Company name..."></div><div class="fr"><div class="fg"><label class="fl">Vendor Type</label><select class="fc"><option>Supplier</option><option>Service Provider</option><option>Contractor</option><option>Consultant</option></select></div><div class="fg"><label class="fl">Category</label><select class="fc"><option>Technology & Software</option><option>Professional Services</option><option>Facility Management</option><option>Logistics & Transport</option></select></div></div><div class="fr"><div class="fg"><label class="fl">Contact Name</label><input class="fc" placeholder="Primary contact"></div><div class="fg"><label class="fl">Contact Email</label><input type="email" class="fc"></div></div><div class="fg"><label class="fl">Address</label><input class="fc" placeholder="Company address..."></div><div class="fr"><div class="fg"><label class="fl">Country</label><select class="fc"><option>Saudi Arabia</option><option>UAE</option><option>Kuwait</option><option>Other</option></select></div><div class="fg"><label class="fl">Risk Level</label><select class="fc"><option>Low</option><option>Medium</option><option>High</option><option>Critical</option></select></div></div>`,
+  okr:`<div class="fg"><label class="fl">Objective Title</label><input class="fc" placeholder="What do you want to achieve?"></div><div class="fr"><div class="fg"><label class="fl">Type</label><select class="fc"><option>Company</option><option>Department</option><option>Team</option><option>Individual</option></select></div><div class="fg"><label class="fl">Owner</label><select class="fc"><option>CEO</option><option>QA Manager</option><option>Operations</option><option>Procurement</option></select></div></div><div class="fr"><div class="fg"><label class="fl">Period Start</label><input type="date" class="fc"></div><div class="fg"><label class="fl">Period End</label><input type="date" class="fc"></div></div><div class="fg"><label class="fl">Description</label><textarea class="fc" rows="3" placeholder="Why is this objective important?"></textarea></div>`,
+};
+
+function openForm(title,type){modal(title,forms[type]||forms.request);}
+function openNew(){openForm('New Item',CP);}
+
+function modal(title,body,lg=false){
+  document.getElementById('mc').innerHTML=`<div class="mbd" onclick="if(event.target===this)cm()"><div class="modal${lg?' lg':''}"><div class="mh"><span class="mt">${title}</span><button class="mc" onclick="cm()"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div><div class="mb">${body}</div><div class="mf"><button class="btn btn-s" onclick="cm()">Cancel</button><button class="btn btn-p" onclick="cm();toast('Saved successfully âœ“')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Save</button></div></div></div>`;
+}
+function cm(){document.getElementById('mc').innerHTML='';}
+function toast(msg,success=true){const t=document.createElement('div');t.className='toast';t.style.background=success?'var(--acc)':'var(--red)';t.style.color=success?'#000':'white';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3000);}
+function showNotif(){toast('You have 3 new notifications');}
+
+let _token='';
+async function api(method,path,body){
+  const opts={method,headers:{'Content-Type':'application/json','Accept':'application/json','Authorization':'Bearer '+_token}};
+  if(body)opts.body=JSON.stringify(body);
+  const r=await fetch('/api'+path,opts);
+  if(!r.ok){const e=await r.json().catch(()=>({}));throw e;}
+  return r.json().catch(()=>({}));
+}
+async function login(){
+  const e=document.getElementById('le').value,p=document.getElementById('lp2').value;
+  const errEl=document.getElementById('login-err');
+  const btn=document.getElementById('login-btn');
+  if(!e||!p){errEl.textContent='Please enter email and password.';errEl.style.display='block';return;}
+  errEl.style.display='none';
+  btn.textContent='Signing in…';btn.disabled=true;
+  try{
+    const r=await api('POST','/auth/login',{email:e,password:p});
+    _token=r.token||r.access_token||'';
+    if(!_token){errEl.textContent='Server returned no token. Check APP_KEY in .env';errEl.style.display='block';btn.textContent='Sign In';btn.disabled=false;return;}
+    document.getElementById('lp').style.display='none';
+    document.getElementById('ma').style.display='flex';
+    nav('dashboard');
+    setTimeout(()=>toast('Welcome to QMS Pro! 👋'),300);
+  }catch(err){
+    let msg='Login failed.';
+    if(err?.errors?.email)msg=err.errors.email[0];
+    else if(err?.message)msg=err.message;
+    else if(err?.status===0||err?.type==='error')msg='Cannot reach server. Is php artisan serve running?';
+    errEl.textContent=msg;
+    errEl.style.display='block';
+    btn.textContent='Sign In';btn.disabled=false;
+  }
+}
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape')cm();});
+</script>
+</body>
+</html>

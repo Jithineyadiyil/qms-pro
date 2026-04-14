@@ -1,0 +1,4 @@
+<?php
+namespace App\Models;
+use Illuminate\Database\Eloquent\Model;
+class Vendor extends Model { protected $fillable=['name','code','category_id','type','registration_no','tax_no','contact_name','contact_email','contact_phone','address','country','website','account_manager_id','status','risk_level','qualification_status','qualification_date','qualification_expiry','overall_rating','metadata']; protected $casts=['metadata'=>'array','qualification_date'=>'date','qualification_expiry'=>'date']; public function category(){ return $this->belongsTo(VendorCategory::class); } public function accountManager(){ return $this->belongsTo(User::class,'account_manager_id'); } public function evaluations(){ return $this->hasMany(VendorEvaluation::class); } public function contracts(){ return $this->hasMany(VendorContract::class); } }

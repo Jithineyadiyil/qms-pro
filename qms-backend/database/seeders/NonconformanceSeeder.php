@@ -1,0 +1,17 @@
+<?php
+namespace Database\Seeders;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+
+class NonconformanceSeeder extends Seeder {
+    public function run(): void {
+        $now = now();
+        DB::table('nonconformances')->insertOrIgnore([
+            ['reference_no'=>'NC-2024-0001','title'=>'Missing Audit Trail in Claims Processing','description'=>'Audit trail records missing for 23 claims processed between Dec 10-15. Violates ISO 9001 clause 9.1.3.','category_id'=>3,'detected_by_id'=>8,'assigned_to_id'=>5,'department_id'=>3,'severity'=>'major','status'=>'capa_in_progress','source'=>'internal_audit','detection_date'=>'2024-01-08','target_closure_date'=>'2024-02-15','actual_closure_date'=>null,'immediate_action'=>'Claims processing halted and manual review initiated for affected period.','root_cause'=>'Logging module disabled during patch deployment on Dec 9.','created_at'=>$now,'updated_at'=>$now],
+            ['reference_no'=>'NC-2024-0002','title'=>'Non-Compliant Document Retention Policy','description'=>'HR department retaining employee personal data beyond the 5-year policy limit.','category_id'=>4,'detected_by_id'=>9,'assigned_to_id'=>6,'department_id'=>5,'severity'=>'critical','status'=>'under_investigation','source'=>'regulatory','detection_date'=>'2024-01-15','target_closure_date'=>'2024-01-31','actual_closure_date'=>null,'immediate_action'=>'Data access restricted pending investigation. DPO notified.','root_cause'=>null,'created_at'=>$now,'updated_at'=>$now],
+            ['reference_no'=>'NC-2024-0003','title'=>'Service Response Time SLA Breach','description'=>'Customer service response time averaged 6.2 hours vs. SLA target of 4 hours for Q4 2023.','category_id'=>5,'detected_by_id'=>2,'assigned_to_id'=>13,'department_id'=>8,'severity'=>'major','status'=>'pending_capa','source'=>'client_complaint','detection_date'=>'2024-01-10','target_closure_date'=>'2024-02-28','actual_closure_date'=>null,'immediate_action'=>'Additional customer service agents brought in. Escalation thresholds reduced to 3 hours.','root_cause'=>'Understaffing during peak season. Absence of automated routing system.','created_at'=>$now,'updated_at'=>$now],
+            ['reference_no'=>'NC-2024-0004','title'=>'Vendor Invoice Without PO Reference','description'=>'3 vendor invoices processed in December without corresponding purchase orders.','category_id'=>1,'detected_by_id'=>8,'assigned_to_id'=>12,'department_id'=>4,'severity'=>'minor','status'=>'open','source'=>'process_review','detection_date'=>'2024-01-20','target_closure_date'=>'2024-02-10','actual_closure_date'=>null,'immediate_action'=>'Invoices placed on hold. Finance team notified.','root_cause'=>null,'created_at'=>$now,'updated_at'=>$now],
+            ['reference_no'=>'NC-2024-0005','title'=>'IT System Downtime Exceeding RTO','description'=>'Core banking integration was unavailable for 6.5 hours on Jan 5, exceeding the 4-hour RTO target.','category_id'=>2,'detected_by_id'=>5,'assigned_to_id'=>5,'department_id'=>3,'severity'=>'critical','status'=>'closed','source'=>'internal_audit','detection_date'=>'2024-01-05','target_closure_date'=>'2024-01-25','actual_closure_date'=>'2024-01-22','immediate_action'=>'Failover system activated. Vendor engaged for emergency support.','root_cause'=>'Primary database server failure. Backup procedure not properly documented.','created_at'=>$now,'updated_at'=>$now],
+        ]);
+    }
+}

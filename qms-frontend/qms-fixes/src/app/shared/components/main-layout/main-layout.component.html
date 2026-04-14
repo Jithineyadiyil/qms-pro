@@ -1,0 +1,119 @@
+<!-- main-layout.component.html — Diamond-QMS shell layout, no Angular Material -->
+
+<div class="app-shell" [ngClass]="{ 'sidebar-collapsed': !sidebarOpen() }">
+
+  <!-- ══ SIDEBAR ═══════════════════════════════════════════════════════════ -->
+  <aside class="app-sidebar">
+
+    <!-- Logo -->
+    <div class="logo-block">
+      <div class="logo-icon">◈</div>
+      <div class="logo-text" *ngIf="sidebarOpen()">
+        <span class="logo-primary">Diamond</span>
+        <span class="logo-sub">QMS Pro</span>
+      </div>
+    </div>
+
+    <!-- Core QMS Navigation -->
+    <nav class="nav-section">
+      <div class="nav-group-label" *ngIf="sidebarOpen()">CORE QMS</div>
+      <a
+        class="nav-item"
+        *ngFor="let link of coreLinks"
+        [routerLink]="link.route"
+        routerLinkActive="nav-item--active"
+        [title]="sidebarOpen() ? '' : link.label">
+        <span class="nav-icon">{{ link.icon }}</span>
+        <span class="nav-label" *ngIf="sidebarOpen()">{{ link.label }}</span>
+      </a>
+    </nav>
+
+    <!-- Operational Navigation -->
+    <nav class="nav-section">
+      <div class="nav-group-label" *ngIf="sidebarOpen()">OPERATIONAL</div>
+      <a
+        class="nav-item"
+        *ngFor="let link of operationalLinks"
+        [routerLink]="link.route"
+        routerLinkActive="nav-item--active"
+        [title]="sidebarOpen() ? '' : link.label">
+        <span class="nav-icon">{{ link.icon }}</span>
+        <span class="nav-label" *ngIf="sidebarOpen()">{{ link.label }}</span>
+      </a>
+    </nav>
+
+    <!-- User info (bottom of sidebar) -->
+    <div class="sidebar-footer" *ngIf="sidebarOpen()">
+      <div class="sf-avatar">{{ initials }}</div>
+      <div class="sf-info">
+        <div class="sf-name">{{ userName }}</div>
+        <div class="sf-role">{{ userRole }}</div>
+      </div>
+    </div>
+
+  </aside>
+  <!-- /sidebar -->
+
+  <!-- ══ MAIN CONTENT AREA ════════════════════════════════════════════════ -->
+  <div class="app-content">
+
+    <!-- Top Toolbar -->
+    <header class="app-toolbar">
+
+      <!-- Hamburger -->
+      <button class="icon-btn" (click)="toggleSidebar()" aria-label="Toggle sidebar">
+        <span class="toolbar-icon">☰</span>
+      </button>
+
+      <!-- Page title placeholder — child routes inject their own heading -->
+      <div class="toolbar-spacer"></div>
+
+      <!-- Right-side actions -->
+      <div class="toolbar-actions">
+
+        <!-- Notifications (placeholder) -->
+        <button class="icon-btn" aria-label="Notifications">
+          <span class="toolbar-icon">🔔</span>
+        </button>
+
+        <!-- User menu -->
+        <div class="user-menu-wrapper">
+          <button
+            class="icon-btn user-trigger"
+            (click)="toggleUserMenu()"
+            aria-label="User menu"
+            aria-haspopup="true"
+            [attr.aria-expanded]="userMenuOpen()">
+            <div class="toolbar-avatar">{{ initials }}</div>
+          </button>
+
+          <!-- Dropdown -->
+          <div class="user-dropdown" *ngIf="userMenuOpen()">
+            <div class="ud-header">
+              <div class="ud-name">{{ userName }}</div>
+              <div class="ud-role">{{ userRole }}</div>
+            </div>
+            <div class="ud-divider"></div>
+            <button class="ud-item" (click)="goToProfile()">
+              <span class="ud-icon">👤</span> My Profile
+            </button>
+            <div class="ud-divider"></div>
+            <button class="ud-item ud-item--danger" (click)="logout()">
+              <span class="ud-icon">⏏</span> Logout
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </header>
+    <!-- /toolbar -->
+
+    <!-- Routed content -->
+    <main class="content-area">
+      <router-outlet></router-outlet>
+    </main>
+
+  </div>
+  <!-- /app-content -->
+
+</div>
