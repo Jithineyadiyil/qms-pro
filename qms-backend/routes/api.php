@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\RequestController;
 use App\Http\Controllers\Api\RequestAttachmentController;
+use App\Http\Controllers\Api\AttachmentController;
 use App\Http\Controllers\Api\NonconformanceController;
 use App\Http\Controllers\Api\CapaController;
 use App\Http\Controllers\Api\RiskController;
@@ -81,6 +82,10 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // ── MODULE 1: REQUEST MANAGEMENT (QDM v2) ────────────────────────────────
+
+    // ── GENERAL ATTACHMENTS (NC, CAPA, Documents, etc.) ────────────────────
+    Route::post('/attachments/upload',  [AttachmentController::class, 'upload']);
+    Route::delete('/attachments/delete',[AttachmentController::class, 'delete']);
 
     // Attachment upload/delete — must be BEFORE the requests/{id} prefix block
     Route::post('/requests/upload-attachment',  [RequestAttachmentController::class, 'upload']);
@@ -235,9 +240,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/',          [SlaController::class, 'store']);
         Route::get('/stats',      [SlaController::class, 'stats']);
         Route::get('/dashboard',  [SlaController::class, 'dashboard']);
+        Route::get('/clients',    [SlaController::class, 'clients']);
+        Route::get('/departments',[SlaController::class, 'departments']);
         Route::get('/{id}',       [SlaController::class, 'show']);
         Route::put('/{id}',       [SlaController::class, 'update']);
         Route::delete('/{id}',    [SlaController::class, 'destroy']);
+        Route::post('/{id}/activate',        [SlaController::class, 'activate']);
+        Route::post('/{id}/suspend',         [SlaController::class, 'suspend']);
         Route::get('/{id}/metrics',          [SlaController::class, 'metrics']);
         Route::post('/{id}/metrics',         [SlaController::class, 'addMetric']);
         Route::post('/{id}/measurements',    [SlaController::class, 'recordMeasurement']);
@@ -265,6 +274,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/stats',               [VendorController::class, 'stats']);
         Route::get('/categories',          [VendorController::class, 'categories']);
         Route::get('/expiring-contracts',  [VendorController::class, 'expiringContracts']);
+        Route::get('/list',                [VendorController::class, 'listDropdown']);  // dropdown
+        Route::get('/users',               [VendorController::class, 'users']);          // owner dropdown
         Route::get('/{id}',                [VendorController::class, 'show']);
         Route::put('/{id}',                [VendorController::class, 'update']);
         Route::delete('/{id}',             [VendorController::class, 'destroy']);

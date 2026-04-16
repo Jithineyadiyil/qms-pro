@@ -1,4 +1,6 @@
-import { Component, OnInit, OnDestroy, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
 import { CommonModule, DatePipe, TitleCasePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -333,11 +335,44 @@ import { LanguageService } from '../../../core/services/language.service';
             <textarea class="fc" [(ngModel)]="form.treatment_plan" rows="2" placeholder="Describe planned actions…"></textarea>
           </div>
         </div>
-        @if (formError()) { <div class="form-err">{{ formError() }}</div> }
+
+        <!-- ── Attachments ── -->
+        <div style="margin-top:12px">
+          <label class="lbl" style="margin-bottom:6px;display:block">📎 Attachments</label>
+          <div [class.dz-over]="riskDragging()"
+               (dragover)="riskDragOver($event)" (dragleave)="riskDragging.set(false)"
+               (drop)="riskDrop($event)" (click)="riskFileInput.click()"
+               style="border:2px dashed var(--border2,#2a3450);border-radius:8px;padding:14px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s">
+            <span style="font-size:1.4rem">📎</span>
+            <p style="margin:4px 0 2px;font-size:.85rem;color:var(--text2,#94a3b8)">Click or drag files here</p>
+            <small style="color:#4b6390;font-size:.75rem">PDF, Word, Excel, Images · Max 20 MB</small>
+            <input #riskFileInput type="file" multiple
+                   accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.txt,.csv"
+                   style="display:none" (change)="riskFilePick($event)">
+          </div>
+          @if (riskAttachments().length > 0) {
+            <ul style="list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:4px">
+              @for (f of riskAttachments(); track f.path; let i = $index) {
+                <li style="display:flex;align-items:center;gap:8px;background:var(--surface2,#0f1628);border:1px solid var(--border2,#1e2845);border-radius:6px;padding:6px 10px">
+                  <span>{{ riskFileIcon(f.name) }}</span>
+                  <span style="flex:1;font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ f.name }}</span>
+                  <span style="font-size:.72rem;color:#4b6390">{{ riskFmtSize(f.size) }}</span>
+                  @if (f.uploading) { <span style="font-size:.72rem;color:#60a5fa">Uploading…</span> }
+                  @else if (f.error) { <span style="font-size:.72rem;color:#f87171">{{ f.error }}</span> }
+                  @else { <a [href]="f.url" target="_blank" style="font-size:.75rem;color:var(--accent,#4f8ef7);text-decoration:none">↗</a> }
+                  <button type="button" (click)="riskRemoveFile(i)"
+                          style="background:none;border:none;cursor:pointer;color:#4b6390;font-size:.85rem;padding:2px 4px">✕</button>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+
+        @if (formError()) { <div class="form-err" style="margin-top:8px">{{ formError() }}</div> }
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" (click)="closeForm()">Cancel</button>
-        <button class="btn btn-primary" (click)="submit()" [disabled]="saving()">
+        <button class="btn btn-primary" (click)="submit()" [disabled]="saving() || riskAnyUploading()">
           {{ saving() ? 'Saving…' : (editId() ? 'Update Risk' : 'Add Risk') }}
         </button>
       </div>
@@ -482,6 +517,11 @@ import { LanguageService } from '../../../core/services/language.service';
   `]
 })
 export class RiskRegisterComponent implements OnInit, OnDestroy {
+  // ── Risk attachment state ──────────────────────────────────────────────
+  riskAttachments  = signal<{name:string;size:number;path:string;url:string;uploading:boolean;error:string|null}[]>([]);
+  riskDragging     = signal(false);
+  riskAnyUploading = computed(() => this.riskAttachments().some(f => f.uploading));
+
   items        = signal<any[]>([]);
   loading      = signal(true);
   total        = signal(0);
@@ -504,6 +544,7 @@ export class RiskRegisterComponent implements OnInit, OnDestroy {
   form: any = this.blankForm();
 
   constructor(
+    private http: HttpClient,
     private svc: RiskService,
     private router: Router,
     private uiEvents: UiEventService,
@@ -602,15 +643,39 @@ export class RiskRegisterComponent implements OnInit, OnDestroy {
   }
   closeForm() { this.showForm.set(false); this.editId.set(null); }
 
+  // ── Risk attachment helpers ──────────────────────────────────────────────
+  riskDragOver(e: DragEvent) { e.preventDefault(); e.stopPropagation(); this.riskDragging.set(true); }
+  riskDrop(e: DragEvent) { e.preventDefault(); e.stopPropagation(); this.riskDragging.set(false); Array.from(e.dataTransfer?.files??[]).forEach(f=>this.riskUploadFile(f)); }
+  riskFilePick(e: Event) { Array.from((e.target as HTMLInputElement).files??[]).forEach(f=>this.riskUploadFile(f)); (e.target as HTMLInputElement).value=''; }
+  riskRemoveFile(i: number) {
+    const f = this.riskAttachments()[i];
+    if (f.path) this.http.delete(`${environment.apiUrl}/attachments/delete`,{body:{path:f.path}}).subscribe();
+    this.riskAttachments.update(l=>l.filter((_,j)=>j!==i));
+  }
+  private riskUploadFile(file: File) {
+    if (file.size > 20*1024*1024) { alert(`"${file.name}" exceeds 20 MB`); return; }
+    const entry = {name:file.name,size:file.size,path:'',url:'',uploading:true,error:null as string|null};
+    this.riskAttachments.update(l=>[...l,entry]);
+    const idx = this.riskAttachments().length-1;
+    const fd = new FormData(); fd.append('file',file); fd.append('module','risks');
+    this.http.post<{data:{path:string;url:string}}>(`${environment.apiUrl}/attachments/upload`,fd).subscribe({
+      next: r => this.riskAttachments.update(l=>l.map((f,i)=>i===idx?{...f,path:r.data.path,url:r.data.url,uploading:false}:f)),
+      error:(e:HttpErrorResponse)=>this.riskAttachments.update(l=>l.map((f,i)=>i===idx?{...f,uploading:false,error:e.error?.message||'Upload failed'}:f))
+    });
+  }
+  riskFileIcon(n:string){const m:Record<string,string>={pdf:'📄',doc:'📝',docx:'📝',xls:'📊',xlsx:'📊',ppt:'📰',pptx:'📰',jpg:'🖼️',jpeg:'🖼️',png:'🖼️',gif:'🖼️',txt:'📃',csv:'📊'};return m[n.split('.').pop()?.toLowerCase()??'']??'📎';}
+  riskFmtSize(b:number){if(!b)return'';if(b<1024)return b+'B';if(b<1048576)return(b/1024).toFixed(1)+'KB';return(b/1048576).toFixed(1)+'MB';}
+
   submit() {
     if (!this.form.title?.trim()) { this.formError.set('Title is required.'); return; }
     if (!this.form.description?.trim()) { this.formError.set('Description is required.'); return; }
     this.saving.set(true); this.formError.set('');
+    const payload = {...this.form, attachments: this.riskAttachments().filter(f=>f.path&&!f.error&&!f.uploading).map(f=>f.path)};
     const req = this.editId()
-      ? this.svc.update(this.editId()!, this.form)
-      : this.svc.create(this.form);
+      ? this.svc.update(this.editId()!, payload)
+      : this.svc.create(payload);
     req.subscribe({
-      next: () => { this.saving.set(false); this.closeForm(); this.load(); this.loadStats(); this.loadMatrix(); },
+      next: () => { this.saving.set(false); this.riskAttachments.set([]); this.closeForm(); this.load(); this.loadStats(); this.loadMatrix(); },
       error: e => { this.saving.set(false); this.formError.set(e?.error?.message || Object.values(e?.error?.errors||{})?.[0] as string || 'Failed.'); }
     });
   }

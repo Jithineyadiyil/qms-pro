@@ -1,4 +1,6 @@
 import { Component, OnDestroy, OnInit, signal, computed } from '@angular/core';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
 import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -179,11 +181,44 @@ import { AuthService } from '../../../core/services/auth.service';
             <textarea class="form-control" rows="2" [(ngModel)]="form.immediate_action" placeholder="Any immediate containment actions taken…"></textarea>
           </div>
         </div>
-        @if (formError()) { <div class="alert-error">{{ formError() }}</div> }
+
+        <!-- ── Attachments ── -->
+        <div style="margin-top:12px">
+          <label class="form-label" style="margin-bottom:6px;display:block">📎 Attachments</label>
+          <div [class.dz-over]="ncDragging()"
+               (dragover)="ncDragOver($event)" (dragleave)="ncDragging.set(false)"
+               (drop)="ncDrop($event)" (click)="ncFileInput.click()"
+               style="border:2px dashed var(--border2,#2a3450);border-radius:8px;padding:14px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s">
+            <span style="font-size:1.4rem">📎</span>
+            <p style="margin:4px 0 2px;font-size:.85rem;color:var(--text2,#94a3b8)">Click or drag files here</p>
+            <small style="color:#4b6390;font-size:.75rem">PDF, Word, Excel, Images · Max 20 MB</small>
+            <input #ncFileInput type="file" multiple
+                   accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.txt,.csv"
+                   style="display:none" (change)="ncFilePick($event)">
+          </div>
+          @if (ncAttachments().length > 0) {
+            <ul style="list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:4px">
+              @for (f of ncAttachments(); track f.path; let i = $index) {
+                <li style="display:flex;align-items:center;gap:8px;background:var(--surface2,#0f1628);border:1px solid var(--border2,#1e2845);border-radius:6px;padding:6px 10px">
+                  <span>{{ ncFileIcon(f.name) }}</span>
+                  <span style="flex:1;font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ f.name }}</span>
+                  <span style="font-size:.72rem;color:#4b6390">{{ ncFmtSize(f.size) }}</span>
+                  @if (f.uploading) { <span style="font-size:.72rem;color:#60a5fa">Uploading…</span> }
+                  @else if (f.error) { <span style="font-size:.72rem;color:#f87171">{{ f.error }}</span> }
+                  @else { <a [href]="f.url" target="_blank" style="font-size:.75rem;color:var(--accent,#4f8ef7);text-decoration:none">↗</a> }
+                  <button type="button" (click)="ncRemoveFile(i)"
+                          style="background:none;border:none;cursor:pointer;color:#4b6390;font-size:.85rem;padding:2px 4px">✕</button>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+
+        @if (formError()) { <div class="alert-error" style="margin-top:8px">{{ formError() }}</div> }
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" (click)="showForm=false">Cancel</button>
-        <button class="btn btn-danger" (click)="submitNc()" [disabled]="saving()">
+        <button class="btn btn-danger" (click)="submitNc()" [disabled]="saving() || ncAnyUploading()">
           <i class="fas fa-triangle-exclamation"></i> {{ saving() ? 'Saving…' : 'Raise NC' }}
         </button>
       </div>
@@ -510,6 +545,11 @@ import { AuthService } from '../../../core/services/auth.service';
   `]
 })
 export class NcListComponent implements OnInit, OnDestroy {
+  // ── NC attachment state ────────────────────────────────────────────────
+  ncAttachments  = signal<{name:string;size:number;path:string;url:string;uploading:boolean;error:string|null}[]>([]);
+  ncDragging     = signal(false);
+  ncAnyUploading = computed(() => this.ncAttachments().some(f => f.uploading));
+
   items       = signal<any[]>([]);
   loading     = signal(true);
   total       = signal(0);
@@ -553,7 +593,7 @@ export class NcListComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private searchTimer: any;
 
-  constructor(private svc: NcCapaService, private uiEvents: UiEventService, public lang: LanguageService, private auth: AuthService) {}
+  constructor(private http: HttpClient, private svc: NcCapaService, private uiEvents: UiEventService, public lang: LanguageService, private auth: AuthService) {}
 
   canCreate = computed(() => {
     const perms: string[] = this.auth.currentUser()?.role?.permissions || [];
@@ -615,6 +655,29 @@ export class NcListComponent implements OnInit, OnDestroy {
     this.showForm = true;
   }
 
+  // ── NC attachment helpers ──────────────────────────────────────────────
+  ncDragOver(e: DragEvent) { e.preventDefault(); e.stopPropagation(); this.ncDragging.set(true); }
+  ncDrop(e: DragEvent) { e.preventDefault(); e.stopPropagation(); this.ncDragging.set(false); Array.from(e.dataTransfer?.files??[]).forEach(f=>this.ncUploadFile(f)); }
+  ncFilePick(e: Event) { Array.from((e.target as HTMLInputElement).files??[]).forEach(f=>this.ncUploadFile(f)); (e.target as HTMLInputElement).value=''; }
+  ncRemoveFile(i: number) {
+    const f = this.ncAttachments()[i];
+    if (f.path) this.http.delete(`${environment.apiUrl}/attachments/delete`,{body:{path:f.path}}).subscribe();
+    this.ncAttachments.update(l=>l.filter((_,j)=>j!==i));
+  }
+  private ncUploadFile(file: File) {
+    if (file.size > 20*1024*1024) { alert(`"${file.name}" exceeds 20 MB`); return; }
+    const entry = {name:file.name,size:file.size,path:'',url:'',uploading:true,error:null as string|null};
+    this.ncAttachments.update(l=>[...l,entry]);
+    const idx = this.ncAttachments().length-1;
+    const fd = new FormData(); fd.append('file',file); fd.append('module','nc');
+    this.http.post<{data:{path:string;url:string}}>(`${environment.apiUrl}/attachments/upload`,fd).subscribe({
+      next: r => this.ncAttachments.update(l=>l.map((f,i)=>i===idx?{...f,path:r.data.path,url:r.data.url,uploading:false}:f)),
+      error:(e:HttpErrorResponse)=>this.ncAttachments.update(l=>l.map((f,i)=>i===idx?{...f,uploading:false,error:e.error?.message||'Upload failed'}:f))
+    });
+  }
+  ncFileIcon(n:string){const m:Record<string,string>={pdf:'📄',doc:'📝',docx:'📝',xls:'📊',xlsx:'📊',ppt:'📰',pptx:'📰',jpg:'🖼️',jpeg:'🖼️',png:'🖼️',gif:'🖼️',txt:'📃',csv:'📊'};return m[n.split('.').pop()?.toLowerCase()??'']??'📎';}
+  ncFmtSize(b:number){if(!b)return'';if(b<1024)return b+'B';if(b<1048576)return(b/1024).toFixed(1)+'KB';return(b/1048576).toFixed(1)+'MB';}
+
   submitNc() {
     if (!this.form.title || !this.form.description) {
       this.formError.set('Title and description are required.');
@@ -622,8 +685,9 @@ export class NcListComponent implements OnInit, OnDestroy {
     }
     this.saving.set(true);
     this.formError.set('');
-    this.svc.createNc(this.form).subscribe({
-      next: () => { this.saving.set(false); this.showForm = false; this.page.set(1); this.load(); this.loadStats(); },
+    const ncPayload = {...this.form, attachments: this.ncAttachments().filter(f=>f.path&&!f.error&&!f.uploading).map(f=>f.path)};
+    this.svc.createNc(ncPayload).subscribe({
+      next: () => { this.saving.set(false); this.showForm = false; this.ncAttachments.set([]); this.page.set(1); this.load(); this.loadStats(); },
       error: (e: any) => { this.saving.set(false); this.formError.set(e?.error?.message || Object.values(e?.error?.errors || {}).flat()[0] as string || 'Failed.'); }
     });
   }

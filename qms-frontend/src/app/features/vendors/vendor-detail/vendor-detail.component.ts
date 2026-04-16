@@ -1,4 +1,6 @@
 import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, ActivatedRoute } from '@angular/router';
@@ -185,8 +187,34 @@ import { AuthService } from '../../../core/services/auth.service';
               <input class="field-input" type="date" [(ngModel)]="newContract.start_date" placeholder="Start Date">
               <input class="field-input" type="date" [(ngModel)]="newContract.end_date" placeholder="End Date">
             </div>
+            <!-- Contract document upload -->
+            <div style="margin-top:10px">
+              <div [class.dz-over]="contractDragging()"
+                   (dragover)="contractDragOver($event)" (dragleave)="contractDragging.set(false)"
+                   (drop)="contractDrop($event)" (click)="contractFileInput.click()"
+                   style="border:2px dashed var(--border2,#2a3450);border-radius:8px;padding:10px;text-align:center;cursor:pointer;font-size:.8rem;color:var(--text2,#94a3b8);transition:border-color .2s">
+                📎 Click or drag to upload contract document (PDF, Word · Max 20 MB)
+                <input #contractFileInput type="file" multiple
+                       accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                       style="display:none" (change)="contractFilePick($event)">
+              </div>
+              @if (contractAttachments().length > 0) {
+                <ul style="list-style:none;margin:5px 0 0;padding:0;display:flex;flex-direction:column;gap:3px">
+                  @for (f of contractAttachments(); track f.path; let i = $index) {
+                    <li style="display:flex;align-items:center;gap:6px;background:var(--surface2,#0f1628);border:1px solid var(--border2,#1e2845);border-radius:5px;padding:4px 8px;font-size:.78rem">
+                      <span>📄</span>
+                      <span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ f.name }}</span>
+                      @if (f.uploading) { <span style="color:#60a5fa">uploading…</span> }
+                      @else if (f.error) { <span style="color:#f87171">failed</span> }
+                      @else { <a [href]="f.url" target="_blank" style="color:var(--accent,#4f8ef7);text-decoration:none">↗</a> }
+                      <button type="button" (click)="contractRemoveFile(i)" style="background:none;border:none;cursor:pointer;color:#4b6390;font-size:.8rem">✕</button>
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
             <button class="btn-primary btn-sm mt-8" (click)="addContract()"
-              [disabled]="!newContract.contract_no || !newContract.title">Add Contract</button>
+              [disabled]="!newContract.contract_no || !newContract.title || contractAnyUploading()">Add Contract</button>
           </div>
         }
       </div>
@@ -302,10 +330,13 @@ export class VendorDetailComponent implements OnInit, OnDestroy {
 
   newEval: any = { quality_score: 5, delivery_score: 5, price_score: 5, service_score: 5, compliance_score: 5, comments: '', evaluation_date: new Date().toISOString().split('T')[0] };
   newContract: any = { contract_no: '', title: '', type: 'service', start_date: '', end_date: '', currency: 'SAR' };
+  contractAttachments  = signal<{name:string;size:number;path:string;url:string;uploading:boolean;error:string|null}[]>([]);
+  contractDragging     = signal(false);
+  contractAnyUploading = computed(() => this.contractAttachments().some(f => f.uploading));
 
   private id!: number;
 
-  constructor(private route: ActivatedRoute, private svc: VendorService, public auth: AuthService) {}
+  constructor(private http: HttpClient, private route: ActivatedRoute, private svc: VendorService, public auth: AuthService) {}
 
   ngOnInit(): void {
     this.id = Number(this.route.snapshot.paramMap.get('id'));
@@ -368,11 +399,34 @@ export class VendorDetailComponent implements OnInit, OnDestroy {
     });
   }
 
+  // ── Contract document helpers ──────────────────────────────────────────
+  contractDragOver(e: DragEvent) { e.preventDefault(); e.stopPropagation(); this.contractDragging.set(true); }
+  contractDrop(e: DragEvent) { e.preventDefault(); e.stopPropagation(); this.contractDragging.set(false); Array.from(e.dataTransfer?.files??[]).forEach(f=>this.contractUploadFile(f)); }
+  contractFilePick(e: Event) { Array.from((e.target as HTMLInputElement).files??[]).forEach(f=>this.contractUploadFile(f)); (e.target as HTMLInputElement).value=''; }
+  contractRemoveFile(i: number) {
+    const f = this.contractAttachments()[i];
+    if (f.path) this.http.delete(`${environment.apiUrl}/attachments/delete`,{body:{path:f.path}}).subscribe();
+    this.contractAttachments.update(l=>l.filter((_,j)=>j!==i));
+  }
+  private contractUploadFile(file: File) {
+    if (file.size > 20*1024*1024) { alert(`"${file.name}" exceeds 20 MB`); return; }
+    const entry = {name:file.name,size:file.size,path:'',url:'',uploading:true,error:null as string|null};
+    this.contractAttachments.update(l=>[...l,entry]);
+    const idx = this.contractAttachments().length-1;
+    const fd = new FormData(); fd.append('file',file); fd.append('module','contracts');
+    this.http.post<{data:{path:string;url:string}}>(`${environment.apiUrl}/attachments/upload`,fd).subscribe({
+      next: r => this.contractAttachments.update(l=>l.map((f,i)=>i===idx?{...f,path:r.data.path,url:r.data.url,uploading:false}:f)),
+      error:(e:HttpErrorResponse)=>this.contractAttachments.update(l=>l.map((f,i)=>i===idx?{...f,uploading:false,error:e.error?.message||'Upload failed'}:f))
+    });
+  }
+
   addContract(): void {
     if (!this.newContract.contract_no || !this.newContract.title) return;
-    this.svc.addContract(this.id, this.newContract).pipe(takeUntil(this.destroy$)).subscribe({
+    const contractPayload = {...this.newContract, document_paths: this.contractAttachments().filter(f=>f.path&&!f.error&&!f.uploading).map(f=>f.path)};
+    this.svc.addContract(this.id, contractPayload).pipe(takeUntil(this.destroy$)).subscribe({
       next: () => {
         this.newContract = { contract_no:'', title:'', type:'service', start_date:'', end_date:'', currency:'SAR' };
+        this.contractAttachments.set([]);
         this.showToast('Contract added', 'success');
         this.svc.getContracts(this.id).pipe(takeUntil(this.destroy$)).subscribe({ next: c => this.contracts.set(c.data ?? c) });
       },
