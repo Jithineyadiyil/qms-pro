@@ -1,3 +1,4 @@
+use App\Http\Controllers\Api\AttachmentController;
 <?php
 
 // ============================================================
@@ -9,6 +10,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\RequestController;
+use App\Http\Controllers\Api\RequestAttachmentController;
 use App\Http\Controllers\Api\NonconformanceController;
 use App\Http\Controllers\Api\CapaController;
 use App\Http\Controllers\Api\RiskController;
@@ -31,6 +33,10 @@ Route::post('/complaints/external',  [ComplaintController::class, 'storeExternal
 
 // ── AUTHENTICATED ────────────────────────────────────────────────────────────
 Route::middleware('auth:sanctum')->group(function () {
+    // ── Generic attachments (all modules) ─────────────────────────────────
+    Route::post('/attachments/upload',  [AttachmentController::class, 'upload']);
+    Route::delete('/attachments/delete',[AttachmentController::class, 'delete']);
+
 
     // Auth
     Route::post('/auth/logout',          [AuthController::class, 'logout']);
@@ -78,6 +84,11 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // ── MODULE 1: REQUEST MANAGEMENT (QDM v2) ────────────────────────────────
+
+    // Attachment upload/delete — must be BEFORE the requests/{id} prefix block
+    Route::post('/requests/upload-attachment',  [RequestAttachmentController::class, 'upload']);
+    Route::delete('/requests/delete-attachment',[RequestAttachmentController::class, 'delete']);
+
     Route::prefix('requests')->group(function () {
         Route::get('/',            [RequestController::class, 'index']);
         Route::post('/',           [RequestController::class, 'store']);

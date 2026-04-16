@@ -1,38 +1,82 @@
-# Validation Fix — Deployment
+# Login Fix — Deployment Guide
 
-## Copy this file
+## Root Causes of "Invalid Email Error"
+
+### Cause 1 — AuthController returned 422 (ValidationException) instead of 401
+The old controller used `throw ValidationException::withMessages(['email' => ['Invalid credentials.']])` 
+which sends HTTP 422 with a `The given data was invalid.` message — not the actual credential error.
+The Angular login component only checked for status 0 and 403, so this fell through as a generic error.
+
+**Fixed:** `AuthController.php` now returns `response()->json(['message' => '...'], 401)` for wrong 
+credentials and `403` for disabled accounts. The login component now handles all status codes correctly.
+
+### Cause 2 — Users not seeded in the database
+All user accounts (admin@qms.com, etc.) are created by `php artisan db:seed`.
+If the seeder hasn't run, no users exist → every login attempt fails.
+
+### Cause 3 — RequestCategorySeeder had old 7 categories
+The seeder still had the original 7 categories (IT Support, HR Request, etc.) instead 
+of the 10 Diamond-QMS categories. Fixed in the new seeder.
+
+---
+
+## Files to Copy
 
 ```
-app/Http/Requests/StoreRequestForm.php
-→ D:\xamp new\htdocs\qms-pro\qms-backend\app\Http\Requests\StoreRequestForm.php
+qms-backend/app/Http/Controllers/Api/AuthController.php
+qms-backend/database/seeders/RequestCategorySeeder.php
+qms-frontend/src/app/features/auth/login/login.component.ts
 ```
 
-## Then clear cache
+---
 
+## Deploy Steps
+
+### Step 1 — Copy the 3 files above
+
+### Step 2 — Run migrations + seeder
 ```bash
+cd D:\xamp new\htdocs\qms-pro\qms-backend
+
+php artisan migrate
+php artisan db:seed
 php artisan cache:clear
-php artisan config:clear
 ```
 
-## What was fixed
+> If the DB already has data and you only want to re-seed categories:
+> ```bash
+> php artisan db:seed --class=RequestCategorySeeder
+> ```
 
-### Bug 1 — `risk_level` rejected 'critical'
-Old: `'risk_level' => 'required|in:low,medium,high'`
-New: `'risk_level' => 'required|in:low,medium,high,critical'`
+### Step 3 — Restart Angular
+```bash
+cd D:\xamp new\htdocs\qms-pro\qms-frontend
+ng serve --proxy-config proxy.conf.json --port 4200 --open
+```
 
-The form offered 'critical' as an option but the server rejected it.
+### Step 4 — Login with any of these credentials
 
-### Bug 2 — `required_if` fired even when field was absent (draft saves)
-Old: `'dynamic_fields.policy_name' => 'required_if:request_sub_type,new_policy|...'`
-New: `'dynamic_fields.policy_name' => 'sometimes|required_if:request_sub_type,new_policy|...'`
+| Role | Email | Password |
+|---|---|---|
+| Super Admin | admin@qms.com | password |
+| QA Manager | fatima.h@qms.com | password |
+| QA Supervisor | shaden.a@qms.com | password |
+| Quality Officer | yusuf.a@qms.com | password |
+| Compliance Manager | turki.a@qms.com | password |
+| Compliance Officer | j.mani@dbroker.com.sa | 12345678 |
+| Dept Manager | omar.f@qms.com | password |
+| Employee | mohammed.g@qms.com | password |
 
-`required_if` without `sometimes` means: "this field is required when condition is met,
-REGARDLESS of whether the key is present in the request body."
+---
 
-`sometimes|required_if` means: "only validate this field IF it appears in the request.
-If dynamic_fields:{} is sent (draft save), skip validation entirely."
+## Quick Diagnostic
 
-This allows:
-- Draft save → `dynamic_fields: {}` → all dynamic rules skipped ✓
-- Full submit with policy sub-type → `dynamic_fields.policy_name` present and non-empty ✓
-- Full submit with policy sub-type → `dynamic_fields.policy_name` missing → FAILS (correct) ✓
+If login still fails, open **DevTools → Network → the /api/auth/login request → Preview tab**:
+
+| Response | Meaning |
+|---|---|
+| `{"message":"Invalid email or password."}` HTTP 401 | Wrong credentials or user not seeded → run `php artisan db:seed` |
+| `{"message":"Account is disabled."}` HTTP 403 | User exists but `is_active = 0` in DB |
+| `net::ERR_CONNECTION_REFUSED` | Laravel/XAMPP not running |
+| `{"message":"Unauthenticated."}` | Token expired → clear localStorage |
+| HTML response (404 page) | Proxy not routing — check proxy.conf.json target |

@@ -546,9 +546,25 @@ export class LoginComponent {
         this.loading.set(false);
         const ar = this.lang.isArabic();
         let msg = ar ? 'بريد إلكتروني أو كلمة مرور غير صحيحة.' : 'Invalid email or password.';
-        if (err?.status === 0)        msg = ar ? 'تعذّر الاتصال بالخادم.' : 'Cannot connect to server.';
-        else if (err?.status === 403) msg = err?.error?.message || (ar ? 'الحساب معطّل.' : 'Account is disabled.');
-        else if (err?.error?.message) msg = err.error.message;
+
+        if (err?.status === 0) {
+          // Network error — proxy not running or Laravel down
+          msg = ar ? 'تعذّر الاتصال بالخادم. تأكد من تشغيل الخادم.' : 'Cannot connect to server. Check that Laravel is running.';
+        } else if (err?.status === 401 || err?.status === 403) {
+          // 401 = wrong credentials, 403 = disabled account
+          msg = err?.error?.message || (ar ? 'بريد إلكتروني أو كلمة مرور غير صحيحة.' : 'Invalid email or password.');
+        } else if (err?.status === 422) {
+          // Validation error (e.g. email format invalid from server-side)
+          const errors = err?.error?.errors;
+          if (errors?.email?.[0]) {
+            msg = errors.email[0];
+          } else if (err?.error?.message) {
+            msg = err.error.message;
+          }
+        } else if (err?.error?.message) {
+          msg = err.error.message;
+        }
+
         this.errorMsg.set(msg);
       }
     });
