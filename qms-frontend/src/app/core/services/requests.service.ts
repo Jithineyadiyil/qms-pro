@@ -20,6 +20,6 @@ export class RequestsService {
   approvals(id: number): Observable<any>                 { return this.api.get(`/requests/${id}/approvals`); }
   categories(): Observable<any>                          { return this.api.get('/requests/categories'); }
   stats(): Observable<any>                               { return this.api.get('/requests/stats'); }
-  users(params: any = {}): Observable<any>               { return this.api.get('/requests/users', params); }
-  departments(): Observable<any>                         { return this.api.get('/requests/departments'); }
+  users(params: any = {}): Observable<any>               { return this.api.get('/users', params); }
+  departments(): Observable<any>                         { return this.api.get('/departments'); }
 }

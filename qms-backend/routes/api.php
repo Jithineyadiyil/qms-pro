@@ -1,4 +1,3 @@
-use App\Http\Controllers\Api\AttachmentController;
 <?php
 
 // ============================================================
@@ -34,8 +33,6 @@ Route::post('/complaints/external',  [ComplaintController::class, 'storeExternal
 // ── AUTHENTICATED ────────────────────────────────────────────────────────────
 Route::middleware('auth:sanctum')->group(function () {
     // ── Generic attachments (all modules) ─────────────────────────────────
-    Route::post('/attachments/upload',  [AttachmentController::class, 'upload']);
-    Route::delete('/attachments/delete',[AttachmentController::class, 'delete']);
 
 
     // Auth
