@@ -127,9 +127,6 @@ class VendorController extends Controller {
         $c->update(['status' => 'terminated']);
         return response()->json($c->fresh(['vendor','owner']));
     }
-    public function users() {
-        return response()->json(User::select('id','name','email')->where('is_active',1)->orderBy('name')->get());
-    }
     public function vendorsList() {
         return response()->json(Vendor::whereIn('status',['active','approved'])->select('id','name','code','type')->orderBy('name')->get());
     }
