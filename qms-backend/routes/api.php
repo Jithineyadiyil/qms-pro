@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\VisitController;
 use App\Http\Controllers\Api\SlaController;
 use App\Http\Controllers\Api\OkrController;
 use App\Http\Controllers\Api\VendorController;
+use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\ComplaintController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\UserController;
@@ -61,23 +62,43 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ── ADMIN ROUTES ────────────────────────────────────────────────────────
     Route::prefix('admin')->group(function () {
-        // Users
+
+        // ── Users ─────────────────────────────────────────────────────────────
         Route::get('/users',                      [UserController::class, 'adminIndex']);
         Route::post('/users',                     [UserController::class, 'store']);
+        Route::put('/users/{id}',                 [UserController::class, 'update']);         // ← was missing
         Route::post('/users/{id}/toggle',         [UserController::class, 'toggleActive']);
         Route::post('/users/{id}/reset-password', [UserController::class, 'resetPassword']);
 
-        // Roles
-        Route::get('/roles',       [UserController::class, 'rolesIndex']);
-        Route::post('/roles',      [UserController::class, 'storeRole']);
-        Route::delete('/roles/{id}', [UserController::class, 'destroyRole']);
+        // ── Roles ─────────────────────────────────────────────────────────────
+        Route::get('/roles',               [UserController::class, 'rolesIndex']);
+        Route::post('/roles',              [UserController::class, 'storeRole']);
+        Route::put('/roles/{id}',          [UserController::class, 'updateRole']);            // ← was missing
+        Route::delete('/roles/{id}',       [UserController::class, 'destroyRole']);
 
-        // Departments
-        Route::get('/departments',       [UserController::class, 'departmentsIndex']);
-        Route::post('/departments',      [UserController::class, 'storeDepartment']);
+        // ── Departments ───────────────────────────────────────────────────────
+        Route::get('/departments',         [UserController::class, 'departmentsIndex']);
+        Route::post('/departments',        [UserController::class, 'storeDepartment']);
+        Route::put('/departments/{id}',    [UserController::class, 'updateDepartment']);      // ← was missing
         Route::delete('/departments/{id}', [UserController::class, 'destroyDepartment']);
 
-        // Activity log
+        // ── Categories (all module types) ─────────────────────────────────────
+        Route::get('/categories/{type}',              [AdminController::class, 'categoriesIndex']);
+        Route::post('/categories/{type}',             [AdminController::class, 'storeCategory']);
+        Route::put('/categories/{type}/{id}',         [AdminController::class, 'updateCategory']);
+        Route::delete('/categories/{type}/{id}',      [AdminController::class, 'destroyCategory']);
+
+        // ── Email Templates ───────────────────────────────────────────────────
+        Route::get('/email-templates',        [AdminController::class, 'emailTemplates']);
+        Route::post('/email-templates',       [AdminController::class, 'storeEmailTemplate']);
+        Route::put('/email-templates/{id}',   [AdminController::class, 'updateEmailTemplate']);
+        Route::delete('/email-templates/{id}',[AdminController::class, 'destroyEmailTemplate']);
+
+        // ── System Settings ───────────────────────────────────────────────────
+        Route::get('/settings',  [AdminController::class, 'settings']);
+        Route::post('/settings', [AdminController::class, 'saveSettings']);
+
+        // ── Activity Log ──────────────────────────────────────────────────────
         Route::get('/activity-log', [UserController::class, 'activityLog']);
     });
 
@@ -338,6 +359,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/visit-summary',      [ReportController::class, 'visitSummary']);
         Route::get('/records/ncs',        [ReportController::class, 'recordsNcs']);
         Route::get('/records/complaints', [ReportController::class, 'recordsComplaints']);
+        Route::get('/records/capas',      [ReportController::class, 'recordsCapas']);
+        Route::get('/records/risks',      [ReportController::class, 'recordsRisks']);
+        Route::get('/records/audits',     [ReportController::class, 'recordsAudits']);
+        Route::get('/records/requests',   [ReportController::class, 'recordsRequests']);
+        Route::get('/records/visits',     [ReportController::class, 'recordsVisits']);
         Route::post('/export',            [ReportController::class, 'export']);
     });
 });

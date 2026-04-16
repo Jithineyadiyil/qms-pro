@@ -553,6 +553,26 @@ type Tab = 'kpi'|'nc'|'capa'|'risk'|'complaints'|'audits'|'sla'|'okr'|'vendors'|
               </tr>}</tbody>
             </table>
           }
+          <!-- Visit records -->
+          @if (activeTab()==='rec_visits') {
+            <table class="table"><thead><tr><th>Ref</th><th>Client</th><th>Type</th><th>Status</th><th>Date</th><th>Host</th><th>Location</th><th>Duration(h)</th><th>Virtual</th><th>Rating</th><th>Follow-Up</th><th>Findings</th><th>Open</th></tr></thead>
+              <tbody>@for(r of recRows();track r.id){<tr>
+                <td><span class="ref">{{r.reference_no}}</span></td>
+                <td class="sm">{{r.client||'—'}}</td>
+                <td class="sm">{{r.type}}</td>
+                <td><span class="badge" [class]="reqStCls(r.status)">{{r.status}}</span></td>
+                <td class="sm">{{r.visit_date|date:'dd MMM yy'}}</td>
+                <td class="sm">{{r.host||'—'}}</td>
+                <td class="sm">{{r.location||'—'}}</td>
+                <td class="tc">{{r.duration_hours||'—'}}</td>
+                <td class="tc">@if(r.is_virtual){<span class="badge badge-blue">Yes</span>}@else{<span class="muted">No</span>}</td>
+                <td class="tc">{{r.rating||'—'}}</td>
+                <td class="sm">{{r.follow_up_date|date:'dd MMM yy'}}</td>
+                <td class="tc">{{r.findings_count||0}}</td>
+                <td class="tc">@if(r.open_findings>0){<span class="badge badge-red">{{r.open_findings}}</span>}@else{<span class="muted">0</span>}</td>
+              </tr>}</tbody>
+            </table>
+          }
         </div>
       }
     }
@@ -1260,6 +1280,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
   okrLbl(s:string,p:number):string { if(s==='completed') return 'Completed'; return p>=70?'On Track':p>=30?'At Risk':'Behind'; }
 
   sevCls(s:string):string  { return ({critical:'badge-red',major:'badge-yellow',minor:'badge-draft'} as any)[s]||'badge-draft'; }
+  auStCls(s:string):string  { return ({planned:'badge-blue',in_progress:'badge-yellow',completed:'badge-green',report_issued:'badge-green',cancelled:'badge-red',deferred:'badge-draft'} as any)[s]||'badge-draft'; }
   priCls(s:string):string  { return ({critical:'badge-red',high:'badge-orange',medium:'badge-yellow',low:'badge-green'} as any)[s]||'badge-draft'; }
   rCls(l:string):string    { return ({critical:'badge-red',high:'badge-orange',medium:'badge-yellow',low:'badge-green'} as any)[l]||'badge-draft'; }
   ncStCls(s:string):string { return ({open:'badge-red',under_investigation:'badge-yellow',capa_in_progress:'badge-blue',pending_capa:'badge-orange',closed:'badge-green'} as any)[s]||'badge-draft'; }

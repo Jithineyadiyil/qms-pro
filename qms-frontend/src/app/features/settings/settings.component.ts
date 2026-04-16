@@ -7,7 +7,7 @@ import { LanguageService } from '../../core/services/language.service';
 import { ThemeService } from '../../core/services/theme.service';
 
 type MainTab = 'users'|'departments'|'roles'|'categories'|'email_templates'|'settings'|'activity';
-type CatType = 'request'|'nc'|'risk'|'document'|'vendor'|'complaint';
+type CatType = 'request'|'nc'|'risk'|'document'|'vendor'|'complaint'|'audit';
 
 @Component({
   selector: 'app-settings',
@@ -1056,6 +1056,7 @@ export class SettingsComponent implements OnInit {
     { id:'document'  as CatType, label:'Documents',   icon:'fas fa-file-alt' },
     { id:'vendor'    as CatType, label:'Vendors',     icon:'fas fa-handshake' },
     { id:'complaint' as CatType, label:'Complaints',  icon:'fas fa-comment-dots' },
+    { id:'audit'     as CatType, label:'Audits',      icon:'fas fa-clipboard-check' },
   ];
 
   tplModules = [
@@ -1143,7 +1144,7 @@ export class SettingsComponent implements OnInit {
   loadDepts() {
     this.loadingDepts.set(true);
     this.adm.departments().subscribe({
-      next: r => { this.departments.set(r||[]); this.loadingDepts.set(false); },
+      next: r => { this.departments.set(r?.data||r||[]); this.loadingDepts.set(false); },
       error: () => this.loadingDepts.set(false)
     });
   }
@@ -1234,16 +1235,16 @@ export class SettingsComponent implements OnInit {
   loadAllCats() {
     this.loadingCats.set(true);
     let done = 0;
-    const types: CatType[] = ['request','nc','risk','document','vendor','complaint'];
+    const types: CatType[] = ['request','nc','risk','document','vendor','complaint','audit'];
     const finish = () => { if (++done === types.length) this.loadingCats.set(false); };
     types.forEach(t => {
       this.adm.categories(t).subscribe({
-        next: r => { this.allCats[t] = r || []; finish(); },
+        next: r => { this.allCats[t] = r?.data || r || []; finish(); },
         error: ()  => { this.allCats[t] = [];   finish(); }
       });
     });
   }
-  switchCatType(t: CatType) { this.activeCatType.set(t); if (!this.allCats[t]) { this.loadingCats.set(true); this.adm.categories(t).subscribe(r=>{ this.allCats[t]=r||[]; this.loadingCats.set(false); }); } }
+  switchCatType(t: CatType) { this.activeCatType.set(t); if (!this.allCats[t]) { this.loadingCats.set(true); this.adm.categories(t).subscribe(r=>{ this.allCats[t]=r?.data||r||[]; this.loadingCats.set(false); }); } }
   activeCats(): any[] { return this.allCats[this.activeCatType()] || []; }
   activeCatLabel(): string { return this.catTypes.find(c=>c.id===this.activeCatType())?.label || ''; }
   catCount(t: string): number { return this.allCats[t]?.length || 0; }
@@ -1256,7 +1257,7 @@ export class SettingsComponent implements OnInit {
       ? this.adm.updateCategory(this.catFormType, this.editCatId()!, this.catForm)
       : this.adm.createCategory(this.catFormType, this.catForm);
     req.subscribe({
-      next: () => { this.saving.set(false); this.showCatForm.set(false); this.adm.categories(this.catFormType).subscribe(r=>this.allCats[this.catFormType]=r||[]); },
+      next: () => { this.saving.set(false); this.showCatForm.set(false); this.adm.categories(this.catFormType).subscribe(r=>this.allCats[this.catFormType]=r?.data||r||[]); },
       error: e => { this.saving.set(false); this.formError.set(e?.error?.message||'Failed.'); }
     });
   }
@@ -1267,7 +1268,7 @@ export class SettingsComponent implements OnInit {
     this.adm.deleteCategory(this.activeCatType(), c.id).subscribe({
       next: () => {
         this.showToast('Category deleted', 'success');
-        this.adm.categories(this.activeCatType()).subscribe(r => this.allCats[this.activeCatType()] = r || []);
+        this.adm.categories(this.activeCatType()).subscribe(r => this.allCats[this.activeCatType()] = r?.data || r || []);
       },
       error: e => this.showToast(e?.error?.message || 'Cannot delete — category may be in use.', 'error')
     });
@@ -1278,7 +1279,7 @@ export class SettingsComponent implements OnInit {
     this.loadingTpls.set(true);
     const p: any = {};
     if (this.tplModuleFilter) p.module = this.tplModuleFilter;
-    this.adm.emailTemplates(p).subscribe({ next: r => { this.templates.set(r||[]); this.loadingTpls.set(false); }, error: () => this.loadingTpls.set(false) });
+    this.adm.emailTemplates(p).subscribe({ next: r => { this.templates.set(r?.data||r||[]); this.loadingTpls.set(false); }, error: () => this.loadingTpls.set(false) });
   }
   openTplForm() { this.editTplId.set(null); this.tplForm={name:'',module:'requests',trigger_event:'',subject:'',body_html:'',is_active:true}; this.formError.set(''); this.showTplForm.set(true); }
   openEditTpl(t: any) { this.editTplId.set(t.id); this.tplForm={...t}; this.formError.set(''); this.showTplForm.set(true); }
@@ -1312,7 +1313,7 @@ export class SettingsComponent implements OnInit {
   // ── System Settings ──
   loadSettings() {
     this.loadingSettings.set(true);
-    this.adm.settings().subscribe({ next: r => { this.systemSettings.set(r||[]); r.forEach((s:any) => this.settingsMap[s.key] = s.type==='boolean' ? (s.value==='1'||s.value===true) : s.value); this.loadingSettings.set(false); }, error: () => this.loadingSettings.set(false) });
+    this.adm.settings().subscribe({ next: r => { const rows = r?.data||r||[]; this.systemSettings.set(rows); (rows as any[]).forEach((s:any) => this.settingsMap[s.key] = s.type==='boolean' ? (s.value==='1'||s.value===true) : s.value); this.loadingSettings.set(false); }, error: () => this.loadingSettings.set(false) });
   }
   settingGroups = computed(() => {
     const groups: Record<string,any> = {};

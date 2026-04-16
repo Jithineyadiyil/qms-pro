@@ -17,11 +17,14 @@ class UserController extends BaseController
     public function index(Request $request): JsonResponse
     {
         $query = User::with('role', 'department')
-            ->when($request->role, fn($q) => $q->whereHas('role', fn($r) => $r->where('slug', $request->role)))
+            ->when($request->role,          fn($q) => $q->whereHas('role', fn($r) => $r->where('slug', $request->role)))
+            ->when($request->role_id,       fn($q) => $q->where('role_id', $request->role_id))
             ->when($request->department_id, fn($q) => $q->where('department_id', $request->department_id))
+            ->when($request->is_active !== null, fn($q) => $q->where('is_active', (bool)$request->is_active))
             ->when($request->search, fn($q) => $q->where(fn($s) =>
                 $s->where('name', 'like', "%{$request->search}%")
                   ->orWhere('email', 'like', "%{$request->search}%")
+                  ->orWhere('employee_id', 'like', "%{$request->search}%")
             ));
         return $this->paginated($query);
     }
@@ -128,6 +131,19 @@ class UserController extends BaseController
         return $this->success($role, 'Role created', 201);
     }
 
+    public function updateRole(Request $request, int $id): JsonResponse
+    {
+        $this->guardAdmin();
+        $role = Role::findOrFail($id);
+        $validated = $request->validate([
+            'name'        => "sometimes|string|max:100|unique:roles,name,{$id}",
+            'description' => 'nullable|string',
+            'permissions' => 'nullable|array',
+        ]);
+        $role->update($validated);
+        return $this->success($role->fresh(), 'Role updated');
+    }
+
     public function destroyRole(int $id): JsonResponse
     {
         $this->guardAdmin();
@@ -162,6 +178,19 @@ class UserController extends BaseController
         ]);
         $dept = Department::create($validated);
         return $this->success($dept, 'Department created', 201);
+    }
+
+    public function updateDepartment(Request $request, int $id): JsonResponse
+    {
+        $this->guardAdmin();
+        $dept = Department::findOrFail($id);
+        $validated = $request->validate([
+            'name'        => "sometimes|string|max:100|unique:departments,name,{$id}",
+            'code'        => "sometimes|string|max:20|unique:departments,code,{$id}",
+            'description' => 'nullable|string',
+        ]);
+        $dept->update($validated);
+        return $this->success($dept->fresh(), 'Department updated');
     }
 
     public function destroyDepartment(int $id): JsonResponse
