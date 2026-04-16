@@ -47,7 +47,7 @@ return new class extends Migration
             $table->decimal('target_value', 10, 2);
             $table->decimal('threshold_warning', 10, 2)->nullable();
             // status computed in application layer
-            $table->string('status', 20)->storedAs("CASE WHEN actual_value >= target_value THEN 'met' WHEN threshold_warning IS NOT NULL AND actual_value >= threshold_warning THEN 'warning' ELSE 'breached' END");
+            $table->string('status', 20)->default('breached')->comment('Set by application: met/warning/breached');
             $table->text('notes')->nullable();
             $table->foreignId('recorded_by_id')->nullable()->constrained('users');
             $table->timestamp('created_at')->useCurrent();
@@ -78,7 +78,7 @@ return new class extends Migration
             $table->decimal('start_value', 10, 2)->default(0);
             $table->decimal('target_value', 10, 2);
             $table->decimal('current_value', 10, 2)->default(0);
-            $table->decimal('progress_percent', 5, 2)->storedAs('CASE WHEN target_value = start_value THEN 100 ELSE LEAST(100, ((current_value - start_value) / (target_value - start_value)) * 100) END');
+            $table->decimal('progress_percent', 5, 2)->default(0)->comment('Calculated by application on update; MySQL stored: LEAST(100,((cur-start)/(target-start))*100)');
             $table->enum('status', ['on_track', 'at_risk', 'off_track', 'completed'])->default('on_track');
             $table->string('unit', 50)->nullable();
             $table->timestamps();

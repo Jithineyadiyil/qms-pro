@@ -33,6 +33,7 @@ class CapaController extends Controller {
     }
 
     public function store(Request $request) {
+        if (!auth()->user()->hasPermission('capa.create')) { return response()->json(['success'=>false,'message'=>'Forbidden'],403); }
         $data = $request->validate([
             'nc_id'                  => 'nullable|exists:nonconformances,id',
             'title'                  => 'required|max:255',
@@ -46,6 +47,7 @@ class CapaController extends Controller {
             'effectiveness_criteria' => 'nullable',
         ]);
         $data['owner_id']     = $request->user()->id;
+        $data['status']       = 'open';
         $data['reference_no'] = 'CAPA-' . date('Y') . '-' . str_pad(Capa::count()+1,4,'0',STR_PAD_LEFT);
         if (!empty($data['nc_id'])) {
             Nonconformance::find($data['nc_id'])?->update(['status' => 'capa_in_progress']);

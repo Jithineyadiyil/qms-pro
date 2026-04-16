@@ -1,0 +1,524 @@
+<!-- QDM Request Form — Dynamic Fields (Appendix A) -->
+<div class="page-container">
+
+  <!-- Header -->
+  <div class="page-header">
+    <h1>{{ editId() ? 'Edit Request' : 'New Quality Request' }}</h1>
+    <p class="sub">Complete the form below. Dynamic fields will appear based on your request type.</p>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-error">{{ error() }}</div>
+  }
+
+  <form [formGroup]="form" novalidate>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         SECTION 1 — CORE REQUEST DETAILS
+    ═══════════════════════════════════════════════════════════════════════ -->
+    <div class="card">
+      <h2 class="card-title">1. Request Details</h2>
+
+      <div class="form-row">
+        <!-- Title -->
+        <div class="form-group col-8">
+          <label>Request Title <span class="req">*</span></label>
+          <input type="text" formControlName="title" placeholder="Brief, clear title for the request"
+                 [class.invalid]="isInvalid('title')"/>
+          @if (isInvalid('title')) {
+            <span class="err">Title is required (max 255 characters).</span>
+          }
+        </div>
+
+        <!-- Risk Level -->
+        <div class="form-group col-4">
+          <label>Risk Level <span class="req">*</span></label>
+          <select formControlName="risk_level" [class.invalid]="isInvalid('risk_level')">
+            <option value="low">🟢  Low</option>
+            <option value="medium">🟡  Medium</option>
+            <option value="high">🔴  High</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <!-- Request Sub-Type (main selector) -->
+        <div class="form-group col-6">
+          <label>Request Type <span class="req">*</span></label>
+          <select formControlName="request_sub_type" [class.invalid]="isInvalid('request_sub_type')">
+            <option [value]="null" disabled>— Select request type —</option>
+            @for (group of subTypeGroups; track group.label) {
+              <optgroup [label]="group.label">
+                @for (type of group.types; track type) {
+                  <option [value]="type">{{ subTypeLabels[type] }}</option>
+                }
+              </optgroup>
+            }
+          </select>
+          @if (isInvalid('request_sub_type')) {
+            <span class="err">Please select a request type.</span>
+          }
+        </div>
+
+        <!-- Priority -->
+        <div class="form-group col-3">
+          <label>Priority <span class="req">*</span></label>
+          <select formControlName="priority">
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+        </div>
+
+        <!-- Due Date -->
+        <div class="form-group col-3">
+          <label>Due Date</label>
+          <input type="date" formControlName="due_date"/>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <!-- Category -->
+        <div class="form-group col-4">
+          <label>Category</label>
+          <select formControlName="category_id">
+            <option [value]="null">— No category —</option>
+            @for (cat of categories(); track cat.id) {
+              <option [value]="cat.id">{{ cat.name }} ({{ cat.sla_hours }}h SLA)</option>
+            }
+          </select>
+        </div>
+
+        <!-- Department -->
+        <div class="form-group col-4">
+          <label>Target Department</label>
+          <select formControlName="department_id">
+            <option [value]="null">— All / General —</option>
+            @for (dept of departments(); track dept.id) {
+              <option [value]="dept.id">{{ dept.name }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Type -->
+        <div class="form-group col-4">
+          <label>Request Origin <span class="req">*</span></label>
+          <select formControlName="type">
+            <option value="internal">Internal</option>
+            <option value="external">External</option>
+            <option value="client">Client</option>
+            <option value="vendor">Vendor</option>
+            <option value="regulatory">Regulatory</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div class="form-group">
+        <label>Description / Background <span class="req">*</span></label>
+        <textarea formControlName="description" rows="4"
+                  placeholder="Provide full context for this request..."
+                  [class.invalid]="isInvalid('description')"></textarea>
+        @if (isInvalid('description')) {
+          <span class="err">Description is required.</span>
+        }
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         SECTION 2 — DYNAMIC FIELDS (Appendix A, Pages 3-6)
+    ═══════════════════════════════════════════════════════════════════════ -->
+
+    @if (selectedSubType()) {
+      <div class="card" formGroupName="dynamic_fields">
+        <h2 class="card-title">2. Type-Specific Information</h2>
+        <p class="card-sub">Fields below are specific to: <strong>{{ subTypeLabels[selectedSubType()!] }}</strong></p>
+
+        <!-- ── Policy Update / New Policy ─────────────────────────────────── -->
+        @if (showPolicyFields()) {
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label>Policy Name <span class="req">*</span></label>
+              <input type="text" formControlName="policy_name"
+                     placeholder="Name of the policy to create or update"
+                     [class.invalid]="isInvalid('dynamic_fields.policy_name')"/>
+            </div>
+            <div class="form-group col-6">
+              <label>Supporting Circulars / Guidelines (Optional)</label>
+              <input type="text" formControlName="supporting_circulars"
+                     placeholder="Reference any related circulars"/>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Purpose of this Policy <span class="req">*</span></label>
+            <textarea formControlName="policy_purpose" rows="3"
+                      placeholder="Describe the objective and scope of this policy"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Departments Involved in Applying this Policy</label>
+            <input type="text" formControlName="departments_involved"
+                   placeholder="e.g. Quality, Compliance, Operations"/>
+          </div>
+        }
+
+        <!-- ── Procedure Update / New Procedure ───────────────────────────── -->
+        @if (showProcedureFields()) {
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label>Procedure Name <span class="req">*</span></label>
+              <input type="text" formControlName="procedure_name"/>
+            </div>
+            <div class="form-group col-6">
+              <label>Departments Involved</label>
+              <input type="text" formControlName="departments_involved"/>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Process or Task this Procedure Covers <span class="req">*</span></label>
+            <textarea formControlName="process_covered" rows="3"
+                      placeholder="What activity does this procedure govern?"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Why is this Procedure Being Updated or Created? <span class="req">*</span></label>
+            <textarea formControlName="creation_reason" rows="2"></textarea>
+          </div>
+        }
+
+        <!-- ── SLA Update / New SLA ───────────────────────────────────────── -->
+        @if (showSlaFields()) {
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label>Service / Process Name <span class="req">*</span></label>
+              <input type="text" formControlName="service_name"/>
+            </div>
+            <div class="form-group col-3">
+              <label>Service Provider <span class="req">*</span></label>
+              <input type="text" formControlName="service_provider"/>
+            </div>
+            <div class="form-group col-3">
+              <label>Service Recipient</label>
+              <input type="text" formControlName="service_recipient"/>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Expected Service Metrics (time, quality, etc.)</label>
+            <textarea formControlName="service_metrics" rows="2"
+                      placeholder="e.g. Response within 2 hours, 99% availability"></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label>Proposed Escalation Method</label>
+              <input type="text" formControlName="escalation_method"/>
+            </div>
+            <div class="form-group col-6">
+              <label>Mutual Agreement Reached?</label>
+              <select formControlName="mutual_agreement">
+                <option [value]="null">— Select —</option>
+                <option [value]="true">Yes</option>
+                <option [value]="false">No</option>
+              </select>
+            </div>
+          </div>
+        }
+
+        <!-- ── Form Update / New Form ─────────────────────────────────────── -->
+        @if (showFormFields()) {
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label>Form Name <span class="req">*</span></label>
+              <input type="text" formControlName="form_name"/>
+            </div>
+            <div class="form-group col-6">
+              <label>Intended Use <span class="req">*</span></label>
+              <input type="text" formControlName="intended_use"/>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Key Fields to Include <span class="req">*</span></label>
+            <textarea formControlName="key_fields" rows="3"
+                      placeholder="List the main data fields this form should capture"></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group col-4">
+              <label class="checkbox-label">
+                <input type="checkbox" formControlName="requires_signature"/>
+                Requires Signature
+              </label>
+            </div>
+            <div class="form-group col-4">
+              <label class="checkbox-label">
+                <input type="checkbox" formControlName="requires_approval"/>
+                Requires Approval
+              </label>
+            </div>
+            <div class="form-group col-4">
+              <label class="checkbox-label">
+                <input type="checkbox" formControlName="requires_digital_coding"/>
+                Requires Digital Coding
+              </label>
+            </div>
+          </div>
+        }
+
+        <!-- ── Manual ─────────────────────────────────────────────────────── -->
+        @if (showManualFields()) {
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label>Manual Name <span class="req">*</span></label>
+              <input type="text" formControlName="manual_name"/>
+            </div>
+            <div class="form-group col-6">
+              <label>Target Departments / Roles</label>
+              <input type="text" formControlName="target_departments"/>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Purpose of this Manual <span class="req">*</span></label>
+            <textarea formControlName="manual_purpose" rows="2"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Content Areas to Include</label>
+            <textarea formControlName="content_areas" rows="3"
+                      placeholder="List the main sections or topics"></textarea>
+          </div>
+        }
+
+        <!-- ── Unregulated Work Request ───────────────────────────────────── -->
+        @if (showUnregulatedFields()) {
+          <div class="form-group">
+            <label>Name of the Undocumented Process <span class="req">*</span></label>
+            <input type="text" formControlName="process_name"/>
+          </div>
+          <div class="form-group">
+            <label>Departments Involved</label>
+            <input type="text" formControlName="departments_involved"/>
+          </div>
+          <div class="form-group">
+            <label>Why Has it Not Been Formally Documented? <span class="req">*</span></label>
+            <textarea formControlName="not_documented_reason" rows="2"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Risks or Operational Gaps Resulting From This</label>
+            <textarea formControlName="operational_gaps" rows="2"></textarea>
+          </div>
+        }
+
+        <!-- ── Document Review Request ────────────────────────────────────── -->
+        @if (showDocReviewFields()) {
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label>Document Name <span class="req">*</span></label>
+              <input type="text" formControlName="document_name"/>
+            </div>
+            <div class="form-group col-3">
+              <label>Type of Review <span class="req">*</span></label>
+              <select formControlName="review_type">
+                <option value="wording">Wording</option>
+                <option value="structure">Structure</option>
+                <option value="format">Format</option>
+              </select>
+            </div>
+            <div class="form-group col-3">
+              <label>Document Version</label>
+              <select formControlName="document_version">
+                <option value="draft">Draft</option>
+                <option value="approved">Approved</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Specific Sections Requiring Feedback</label>
+            <textarea formControlName="feedback_sections" rows="2"></textarea>
+          </div>
+        }
+
+        <!-- ── Quality Review Request ─────────────────────────────────────── -->
+        @if (showQualityRevFields()) {
+          <div class="form-group">
+            <label>Process or Output Requiring Quality Review <span class="req">*</span></label>
+            <textarea formControlName="process_or_output" rows="2"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Quality Aspects to Assess <span class="req">*</span></label>
+            <textarea formControlName="quality_aspects" rows="2"
+                      placeholder="e.g. Accuracy, completeness, compliance with standards"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Do You Have Previous Reports or Data? (Attach below)</label>
+            <select formControlName="has_previous_data">
+              <option [value]="null">— Select —</option>
+              <option [value]="true">Yes</option>
+              <option [value]="false">No</option>
+            </select>
+          </div>
+        }
+
+        <!-- ── Issue / Problem Analysis ───────────────────────────────────── -->
+        @if (showIssueFields()) {
+          <div class="form-group">
+            <label>Describe the Issue or Problem <span class="req">*</span></label>
+            <textarea formControlName="issue_description" rows="4"
+                      placeholder="Provide a clear description of the issue"></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group col-4">
+              <label>When Did it Start?</label>
+              <input type="date" formControlName="issue_start_date"/>
+            </div>
+            <div class="form-group col-4">
+              <label>Is it Recurring? <span class="req">*</span></label>
+              <select formControlName="is_recurring">
+                <option [value]="null">— Select —</option>
+                <option [value]="true">Yes</option>
+                <option [value]="false">No</option>
+              </select>
+            </div>
+            <div class="form-group col-4">
+              <label>Departments Impacted</label>
+              <input type="text" formControlName="impacted_depts"/>
+            </div>
+          </div>
+        }
+
+        <!-- ── Performance Measurement (KPIs) ────────────────────────────── -->
+        @if (showKpiFields()) {
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label>Department or Team Name <span class="req">*</span></label>
+              <input type="text" formControlName="department_name"/>
+            </div>
+            <div class="form-group col-6">
+              <label>KPI Objective <span class="req">*</span></label>
+              <select formControlName="kpi_objective">
+                <option value="individual">Individual</option>
+                <option value="team">Team</option>
+                <option value="department">Department</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Key Tasks or Operations to be Measured <span class="req">*</span></label>
+            <textarea formControlName="key_tasks" rows="3"
+                      placeholder="List the operations or activities to measure"></textarea>
+          </div>
+        }
+
+        <!-- ── New Project / New Development ─────────────────────────────── -->
+        @if (showProjectFields()) {
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label>Project / Development Name <span class="req">*</span></label>
+              <input type="text" formControlName="project_name"/>
+            </div>
+            <div class="form-group col-3">
+              <label>Proposed Start Date</label>
+              <input type="date" formControlName="proposed_start"/>
+            </div>
+            <div class="form-group col-3">
+              <label>Departments / Systems Involved</label>
+              <input type="text" formControlName="departments_systems"/>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Issue or Improvement it Addresses <span class="req">*</span></label>
+            <textarea formControlName="issue_addressed" rows="2"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Expected Outcomes or Success Measures</label>
+            <textarea formControlName="success_measures" rows="2"></textarea>
+          </div>
+        }
+
+        <!-- ── External Audit Preparation ────────────────────────────────── -->
+        @if (showAuditFields()) {
+          <div class="form-row">
+            <div class="form-group col-4">
+              <label>Auditing Entity <span class="req">*</span></label>
+              <input type="text" formControlName="auditing_entity"
+                     placeholder="e.g. SAMA, External ISO Body"/>
+            </div>
+            <div class="form-group col-4">
+              <label>Expected Date of Visit <span class="req">*</span></label>
+              <input type="date" formControlName="audit_date"/>
+            </div>
+            <div class="form-group col-4">
+              <label>Audit Scope <span class="req">*</span></label>
+              <input type="text" formControlName="audit_scope"/>
+            </div>
+          </div>
+          <div class="form-group">
+            <p class="info-note">📎 Attach the audit request list using the attachment section below (if available).</p>
+          </div>
+        }
+
+        <!-- ── Quality Note ───────────────────────────────────────────────── -->
+        @if (showQualityNoteFields()) {
+          <div class="form-group">
+            <label>Quality Observation or Note <span class="req">*</span></label>
+            <textarea formControlName="observation" rows="3"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Which Process, Activity, or Department Does It Relate To?</label>
+            <input type="text" formControlName="related_process"/>
+          </div>
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label>Potential Impact if Not Addressed <span class="req">*</span></label>
+              <select formControlName="potential_impact">
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+            <div class="form-group col-6">
+              <label>Note Type <span class="req">*</span></label>
+              <select formControlName="note_type">
+                <option value="observation">Observation Only</option>
+                <option value="recommendation">Recommendation</option>
+              </select>
+            </div>
+          </div>
+        }
+
+        <!-- ── Other (Custom) ─────────────────────────────────────────────── -->
+        @if (showOtherFields()) {
+          <div class="form-group">
+            <label>Please Describe the Request Type <span class="req">*</span></label>
+            <textarea formControlName="other_description" rows="2"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Main Purpose <span class="req">*</span></label>
+            <textarea formControlName="main_purpose" rows="2"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Departments Involved</label>
+            <input type="text" formControlName="departments_involved"/>
+          </div>
+        }
+
+      </div><!-- /dynamic_fields -->
+    }
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         FORM ACTIONS
+    ═══════════════════════════════════════════════════════════════════════ -->
+    <div class="form-actions">
+      <button type="button" class="btn btn-ghost"
+              (click)="router.navigate(['/requests'])">
+        Cancel
+      </button>
+      <button type="button" class="btn btn-secondary"
+              [disabled]="loading()"
+              (click)="onSubmit(false)">
+        {{ loading() ? 'Saving...' : 'Save as Draft' }}
+      </button>
+      <button type="button" class="btn btn-primary"
+              [disabled]="loading()"
+              (click)="onSubmit(true)">
+        {{ loading() ? 'Submitting...' : 'Submit to QDM' }}
+      </button>
+    </div>
+
+  </form>
+</div>

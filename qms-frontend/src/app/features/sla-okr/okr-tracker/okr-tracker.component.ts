@@ -9,7 +9,7 @@ import { LanguageService } from '../../../core/services/language.service';
 @Component({
   selector: 'app-okr-tracker',
   standalone: true,
-  imports: [CommonModule, FormsModule, FormsModule],
+  imports: [CommonModule, FormsModule],
   template: `
 <!-- Stats Row -->
 <div class="stats-row">
@@ -131,12 +131,12 @@ import { LanguageService } from '../../../core/services/language.service';
             </div>
             <div class="kr-values">
               <div style="text-align:center">
-                <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--text1)">{{ kr.current_value }}</div>
+                <div style="font-family:'Inter',sans-serif;font-size:18px;font-weight:800;color:var(--text1)">{{ kr.current_value }}</div>
                 <div style="font-size:10px;color:var(--text3)">current</div>
               </div>
               <div style="color:var(--text3);font-size:16px">/</div>
               <div style="text-align:center">
-                <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--accent)">{{ kr.target_value }}</div>
+                <div style="font-family:'Inter',sans-serif;font-size:18px;font-weight:800;color:var(--accent)">{{ kr.target_value }}</div>
                 <div style="font-size:10px;color:var(--text3)">{{ kr.unit || 'target' }}</div>
               </div>
               <button class="btn btn-sm" style="background:var(--accent);color:#fff;font-size:11px;padding:4px 10px"
@@ -389,7 +389,7 @@ import { LanguageService } from '../../../core/services/language.service';
   styles: [`
     .stats-row{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
     .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;flex:1;min-width:110px;text-align:center}
-    .stat-num{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;line-height:1}
+    .stat-num{font-family:'Inter',sans-serif;font-size:28px;font-weight:800;line-height:1}
     .stat-lbl{font-size:11px;color:var(--text2);margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
     .page-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:12px;flex-wrap:wrap}
     .filter-group{display:flex;gap:8px;flex-wrap:wrap}
@@ -398,9 +398,9 @@ import { LanguageService } from '../../../core/services/language.service';
     .okr-card:hover{box-shadow:0 2px 16px rgba(0,0,0,.06)}
     .okr-card.expanded{border-color:var(--accent)}
     .okr-header{display:flex;gap:16px;align-items:flex-start}
-    .okr-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700}
+    .okr-title{font-family:'Inter',sans-serif;font-size:15px;font-weight:700}
     .okr-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}
-    .okr-pct{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;line-height:1;text-align:right}
+    .okr-pct{font-family:'Inter',sans-serif;font-size:26px;font-weight:800;line-height:1;text-align:right}
     .prog-bar-wrap{height:7px;background:var(--border);border-radius:4px}
     .prog-bar{height:100%;border-radius:4px;transition:width .4s}
     .avatar-xs{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#8b5cf6);display:grid;place-items:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0}

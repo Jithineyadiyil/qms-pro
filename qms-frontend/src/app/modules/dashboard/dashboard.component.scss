@@ -103,10 +103,11 @@
   margin-top: 0.2rem;
 }
 
-/* Colour variants — map to CSS var accent colours */
-@each $name, $hue in (blue, 210), (orange, 30), (purple, 270), (red, 0),
-                      (yellow, 45), (teal, 175), (green, 140) {
-  .mc--#{$name} { border-left: 3px solid hsl(#{$hue}, 70%, 55%); }
+/* Colour variants — quoted keys stop Sass treating names as colour values */
+$mc-hues: ('blue': 210, 'orange': 30, 'purple': 270, 'red': 0, 'yellow': 45, 'teal': 175, 'green': 140);
+
+@each $name, $hue in $mc-hues {
+  .mc--#{$name} { border-left: 3px solid hsl($hue, 70%, 55%); }
 }
 
 /* ── Layout helpers ───────────────────────────────────────────────────── */

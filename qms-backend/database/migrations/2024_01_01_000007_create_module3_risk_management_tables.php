@@ -27,8 +27,8 @@ return new class extends Migration
             $table->tinyInteger('likelihood')->default(3);
             $table->tinyInteger('impact')->default(3);
             // risk_score and risk_level are computed in PHP (MySQL generated columns are tricky in migrations)
-            $table->tinyInteger('risk_score')->storedAs('likelihood * impact');
-            $table->string('risk_level', 20)->storedAs("CASE WHEN likelihood * impact <= 4 THEN 'low' WHEN likelihood * impact <= 9 THEN 'medium' WHEN likelihood * impact <= 16 THEN 'high' ELSE 'critical' END");
+            $table->tinyInteger('risk_score')->default(0)->comment('MySQL stored: likelihood * impact');
+            $table->string('risk_level', 20)->default('low')->comment('MySQL stored: computed from score');
             $table->tinyInteger('residual_likelihood')->nullable();
             $table->tinyInteger('residual_impact')->nullable();
             $table->enum('treatment_strategy', ['avoid', 'mitigate', 'transfer', 'accept'])->nullable();

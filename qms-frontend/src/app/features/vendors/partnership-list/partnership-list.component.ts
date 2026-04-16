@@ -1,7 +1,8 @@
 import { Component, OnDestroy, OnInit, signal } from '@angular/core';
 import { Subject, takeUntil } from 'rxjs';
-import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AuthService } from '../../../core/services/auth.service';
 import { VendorService } from '../../../core/services/vendor.service';
 import { UiEventService } from '../../../core/services/ui-event.service';
 import { LanguageService } from '../../../core/services/language.service';
@@ -9,7 +10,7 @@ import { LanguageService } from '../../../core/services/language.service';
 @Component({
   selector: 'app-partnership-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, FormsModule],
+  imports: [CommonModule, FormsModule],
   template: `
 <!-- Stats Row -->
 <div class="stats-row">
@@ -55,9 +56,11 @@ import { LanguageService } from '../../../core/services/language.service';
       <option value="other">Other</option>
     </select>
   </div>
-  <button class="btn btn-primary btn-sm" (click)="openCreate()">
-    <i class="fas fa-plus"></i> New Contract
-  </button>
+  @if (canCreate()) {
+    <button class="btn btn-primary btn-sm" (click)="openCreate()">
+      <i class="fas fa-plus"></i> New Contract
+    </button>
+  }
 </div>
 
 <!-- Table -->
@@ -364,9 +367,21 @@ import { LanguageService } from '../../../core/services/language.service';
             </button>
           }
           @if (detail()!.status === 'active') {
-            <button class="btn btn-sm" style="background:var(--danger);color:#fff" (click)="terminate(detail()!)">
-              <i class="fas fa-ban"></i> Terminate
-            </button>
+            @if (confirmTerminateId !== detail()!.id) {
+              <button class="btn btn-sm" style="background:var(--danger);color:#fff;opacity:.75"
+                (click)="confirmTerminateId=detail()!.id">
+                <i class="fas fa-ban"></i> Terminate Contract
+              </button>
+            } @else {
+              <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+                <span style="font-size:12px;color:var(--danger);font-weight:600">Confirm terminate?</span>
+                <button class="btn btn-sm" style="background:var(--danger);color:#fff"
+                  (click)="terminate(detail()!)" [disabled]="saving()">
+                  Yes, Terminate
+                </button>
+                <button class="btn btn-sm btn-secondary" (click)="confirmTerminateId=null">Cancel</button>
+              </div>
+            }
           }
           @if (detail()!.status === 'terminated' || detail()!.status === 'expired') {
             <button class="btn btn-secondary btn-sm" (click)="openRenewModal(detail()!)">
@@ -417,11 +432,14 @@ import { LanguageService } from '../../../core/services/language.service';
     </div>
   </div>
 }
+@if (toast()) {
+  <div class="toast" [class]="'toast-' + toast()!.type">{{ toast()!.msg }}</div>
+}
   `,
   styles: [`
     .stats-row{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
     .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;flex:1;min-width:100px;text-align:center}
-    .stat-num{font-family:'Syne',sans-serif;font-size:26px;font-weight:800}
+    .stat-num{font-family:'Inter',sans-serif;font-size:26px;font-weight:800}
     .stat-lbl{font-size:11px;color:var(--text2);margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
     .expiry-banner{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:#b45309;padding:10px 16px;border-radius:10px;margin-bottom:14px;display:flex;align-items:center;gap:8px;font-size:13px;flex-wrap:wrap}
     .expiry-tag{background:rgba(245,158,11,.2);padding:2px 8px;border-radius:4px;font-family:monospace;font-size:12px;cursor:pointer}
@@ -466,6 +484,7 @@ export class PartnershipListComponent implements OnInit, OnDestroy {
   users      = signal<any[]>([]);
   detail     = signal<any>(null);
   renewTarget= signal<any>(null);
+  confirmTerminateId: number | null = null;
 
   search = ''; filterStatus = ''; filterType = '';
   showForm = false; saving = signal(false); formError = signal('');
@@ -482,7 +501,13 @@ export class PartnershipListComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private searchTimer: any;
 
-  constructor(private svc: VendorService, private uiEvents: UiEventService, public lang: LanguageService) {}
+  constructor(private svc: VendorService, private uiEvents: UiEventService, public lang: LanguageService, public auth: AuthService) {}
+
+
+  private slug = () => (this.auth.currentUser() as any)?.role?.slug ?? '';
+  canCreate     = () => ['super_admin','qa_manager','compliance_manager'].includes(this.slug());
+  canEdit       = () => ['super_admin','qa_manager','compliance_manager'].includes(this.slug());
+  canTerminate  = () => ['super_admin','qa_manager'].includes(this.slug());
 
   ngOnInit() {
     this.uiEvents.openNewForm$.pipe(takeUntil(this.destroy$)).subscribe(() => this.openCreate());
@@ -584,9 +609,14 @@ export class PartnershipListComponent implements OnInit, OnDestroy {
   }
 
   terminate(c: any) {
-    if (!confirm(`Terminate contract ${c.contract_no}? This cannot be undone.`)) return;
+    if (this.confirmTerminateId !== c.id) {
+      this.confirmTerminateId = c.id;   // first click: show confirm
+      return;
+    }
+    this.confirmTerminateId = null;     // second click: confirmed
     this.svc.terminateContract(c.id).subscribe({
-      next: (r: any) => { this.detail.set(r); this.load(); this.loadStats(); }
+      next: (r: any) => { this.detail.set(r); this.load(); this.loadStats(); this.showToast('Contract terminated', 'success'); },
+      error: (e: any) => this.showToast(e?.error?.message || 'Failed to terminate', 'error')
     });
   }
 
@@ -649,5 +679,12 @@ export class PartnershipListComponent implements OnInit, OnDestroy {
   statusClass(s: string) {
     return { active: 'badge-green', draft: 'badge-draft', expired: 'badge-red', terminated: 'badge-red', suspended: 'badge-yellow' }[s] || 'badge-draft';
   }
+
+  toast = signal<{msg:string,type:string}|null>(null);
+  showToast(msg: string, type: string): void {
+    this.toast.set({ msg, type });
+    setTimeout(() => this.toast.set(null), 3500);
+  }
+
   ngOnDestroy() { this.destroy$.next(); this.destroy$.complete(); }
 }

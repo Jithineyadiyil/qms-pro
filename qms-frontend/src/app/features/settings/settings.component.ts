@@ -47,7 +47,7 @@ type CatType = 'request'|'nc'|'risk'|'document'|'vendor'|'complaint';
       <div class="filter-bar">
         <div class="search-box">
           <i class="fas fa-magnifying-glass"></i>
-          <input [(ngModel)]="userSearch" (input)="loadUsers()" placeholder="Search name, email, employee ID…">
+          <input [(ngModel)]="userSearch" (input)="onUserSearch()" placeholder="Search name, email, employee ID…">
         </div>
         <select class="sel" [(ngModel)]="userRoleFilter" (change)="loadUsers()">
           <option value="">All Roles</option>
@@ -138,7 +138,14 @@ type CatType = 'request'|'nc'|'risk'|'document'|'vendor'|'complaint';
               <div class="dept-icon"><i class="fas fa-building"></i></div>
               <div class="dept-actions">
                 <button class="icon-btn" (click)="openEditDept(d)"><i class="fas fa-pen"></i></button>
-                <button class="icon-btn del" (click)="deleteDept(d)"><i class="fas fa-trash"></i></button>
+                @if (confirmDeleteId() !== 'dept:'+d.id) {
+                <button class="icon-btn del" (click)="deleteDept(d)" title="Delete"><i class="fas fa-trash"></i></button>
+              } @else {
+                <span style="display:flex;gap:4px;align-items:center">
+                  <button class="icon-btn del" (click)="deleteDept(d)" title="Confirm delete" style="background:var(--danger);color:#fff;border-color:var(--danger)"><i class="fas fa-check"></i></button>
+                  <button class="icon-btn" (click)="confirmDeleteId.set(null)" title="Cancel"><i class="fas fa-times"></i></button>
+                </span>
+              }
               </div>
             </div>
             <div class="dept-name">{{ d.name }}</div>
@@ -192,8 +199,15 @@ type CatType = 'request'|'nc'|'risk'|'document'|'vendor'|'complaint';
               <div class="role-name">{{ r.name }}</div>
               <div style="display:flex;gap:6px;align-items:center">
                 <span class="badge badge-blue">{{ r.users_count || 0 }} users</span>
-                <button class="icon-btn" title="Edit" (click)="openEditRole(r)"><i class="fas fa-pencil"></i></button>
+                <button class="icon-btn" title="Edit" (click)="openEditRole(r)"><i class="fas fa-pen"></i></button>
+                @if (confirmDeleteId() !== 'role:'+r.id) {
                 <button class="icon-btn icon-btn-danger" title="Delete" (click)="deleteRole(r)" [disabled]="r.slug==='super_admin'"><i class="fas fa-trash"></i></button>
+              } @else {
+                <span style="display:flex;gap:3px;align-items:center">
+                  <button class="icon-btn del" (click)="deleteRole(r)" style="background:var(--danger);color:#fff;border-color:var(--danger)"><i class="fas fa-check"></i></button>
+                  <button class="icon-btn" (click)="confirmDeleteId.set(null)"><i class="fas fa-times"></i></button>
+                </span>
+              }
               </div>
             </div>
             @if (r.description) { <div class="role-desc">{{ r.description }}</div> }
@@ -269,7 +283,12 @@ type CatType = 'request'|'nc'|'risk'|'document'|'vendor'|'complaint';
                   <td>
                     <div class="row-actions">
                       <button class="ra-btn" (click)="openEditCat(c)"><i class="fas fa-pen"></i></button>
-                      <button class="ra-btn del" (click)="deleteCategory(c)"><i class="fas fa-trash"></i></button>
+                      @if (confirmDeleteId() !== 'cat:'+c.id) {
+                      <button class="ra-btn del" (click)="deleteCategory(c)" title="Delete"><i class="fas fa-trash"></i></button>
+                    } @else {
+                      <button class="ra-btn del" (click)="deleteCategory(c)" title="Confirm" style="background:var(--danger);color:#fff"><i class="fas fa-check"></i></button>
+                      <button class="ra-btn" (click)="confirmDeleteId.set(null)"><i class="fas fa-times"></i></button>
+                    }
                     </div>
                   </td>
                 </tr>
@@ -324,7 +343,12 @@ type CatType = 'request'|'nc'|'risk'|'document'|'vendor'|'complaint';
                   <i [class]="t.is_active?'fas fa-toggle-on':'fas fa-toggle-off'"></i>
                 </button>
                 <button class="icon-btn sm" (click)="openEditTpl(t)"><i class="fas fa-pen"></i></button>
-                <button class="icon-btn sm del" (click)="deleteTpl(t)"><i class="fas fa-trash"></i></button>
+                @if (confirmDeleteId() !== 'tpl:'+t.id) {
+                <button class="icon-btn sm del" (click)="deleteTpl(t)" title="Delete"><i class="fas fa-trash"></i></button>
+              } @else {
+                <button class="icon-btn sm del" (click)="deleteTpl(t)" title="Confirm" style="background:var(--danger);color:#fff;border-color:var(--danger)"><i class="fas fa-check"></i></button>
+                <button class="icon-btn sm" (click)="confirmDeleteId.set(null)"><i class="fas fa-times"></i></button>
+              }
               </div>
             </div>
             <div class="tpl-name">{{ t.name }}</div>
@@ -465,6 +489,13 @@ type CatType = 'request'|'nc'|'risk'|'document'|'vendor'|'complaint';
             </tbody>
           </table>
         </div>
+        @if (logLastPage() > 1) {
+          <div class="pagination">
+            <span class="pg-info">{{ logTotal() }} entries · Page {{ logPage() }} of {{ logLastPage() }}</span>
+            <button class="btn btn-secondary btn-xs" [disabled]="logPage()<=1" (click)="prevLogPage()"><i class="fas fa-chevron-left"></i></button>
+            <button class="btn btn-secondary btn-xs" [disabled]="logPage()>=logLastPage()" (click)="nextLogPage()"><i class="fas fa-chevron-right"></i></button>
+          </div>
+        }
       </div>
     }
 
@@ -725,6 +756,9 @@ type CatType = 'request'|'nc'|'risk'|'document'|'vendor'|'complaint';
     </div>
   </div>
 }
+@if (toast()) {
+  <div class="toast" [class]="'toast-' + toast()!.type">{{ toast()!.msg }}</div>
+}
   `,
   styles: [`
     :host { display:block; }
@@ -732,8 +766,8 @@ type CatType = 'request'|'nc'|'risk'|'document'|'vendor'|'complaint';
 
     /* ── Sidebar nav ── */
     .adm-nav { width:220px; flex-shrink:0; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px 10px; display:flex; flex-direction:column; gap:2px; align-self:flex-start; position:sticky; top:20px; }
-    .adm-nav-title { font-family:'Syne',sans-serif; font-size:11px; font-weight:800; color:var(--text3); text-transform:uppercase; letter-spacing:.8px; padding:4px 10px 10px; border-bottom:1px solid var(--border); margin-bottom:6px; }
-    .adm-nav-item { display:flex; align-items:center; gap:9px; padding:9px 12px; border-radius:8px; border:none; background:none; color:var(--text2); font-size:13px; font-family:'DM Sans',sans-serif; cursor:pointer; transition:all .13s; width:100%; text-align:left; }
+    .adm-nav-title { font-family:'Inter',sans-serif; font-size:11px; font-weight:800; color:var(--text3); text-transform:uppercase; letter-spacing:.8px; padding:4px 10px 10px; border-bottom:1px solid var(--border); margin-bottom:6px; }
+    .adm-nav-item { display:flex; align-items:center; gap:9px; padding:9px 12px; border-radius:8px; border:none; background:none; color:var(--text2); font-size:13px; font-family:'Inter',sans-serif; cursor:pointer; transition:all .13s; width:100%; text-align:left; }
     .adm-nav-item:hover { background:var(--surface2); color:var(--text); }
     .adm-nav-item.active { background:rgba(59,130,246,.1); color:var(--accent); font-weight:600; }
     .adm-nav-item i { width:16px; font-size:13px; text-align:center; }
@@ -742,7 +776,7 @@ type CatType = 'request'|'nc'|'risk'|'document'|'vendor'|'complaint';
     /* ── Content ── */
     .adm-content { flex:1; padding-left:20px; display:flex; flex-direction:column; gap:16px; min-width:0; }
     .content-header { display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:10px; }
-    .content-title { font-family:'Syne',sans-serif; font-size:18px; font-weight:800; display:flex; align-items:center; gap:8px; }
+    .content-title { font-family:'Inter',sans-serif; font-size:18px; font-weight:800; display:flex; align-items:center; gap:8px; }
     .content-sub { font-size:12px; color:var(--text2); margin-top:3px; }
 
     /* ── Table shared ── */
@@ -785,8 +819,8 @@ type CatType = 'request'|'nc'|'risk'|'document'|'vendor'|'complaint';
     .filter-bar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
     .search-box { display:flex; align-items:center; gap:7px; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:7px 12px; min-width:250px; }
     .search-box i { color:var(--text3); font-size:11px; }
-    .search-box input { background:none; border:none; outline:none; color:var(--text); font-size:12px; font-family:'DM Sans',sans-serif; flex:1; }
-    .sel { background:var(--surface); border:1px solid var(--border); border-radius:7px; color:var(--text); font-size:12px; font-family:'DM Sans',sans-serif; padding:7px 10px; outline:none; cursor:pointer; }
+    .search-box input { background:none; border:none; outline:none; color:var(--text); font-size:12px; font-family:'Inter',sans-serif; flex:1; }
+    .sel { background:var(--surface); border:1px solid var(--border); border-radius:7px; color:var(--text); font-size:12px; font-family:'Inter',sans-serif; padding:7px 10px; outline:none; cursor:pointer; }
     .pagination { display:flex; align-items:center; gap:5px; padding:10px 14px; border-top:1px solid var(--border); }
     .pg-info { font-size:11px; color:var(--text2); margin-right:auto; }
 
@@ -796,7 +830,7 @@ type CatType = 'request'|'nc'|'risk'|'document'|'vendor'|'complaint';
     .dept-top { display:flex; align-items:center; justify-content:space-between; }
     .dept-icon { width:36px; height:36px; border-radius:9px; background:rgba(59,130,246,.1); display:grid; place-items:center; font-size:16px; color:var(--accent); }
     .dept-actions { display:flex; gap:4px; }
-    .dept-name { font-family:'Syne',sans-serif; font-size:14px; font-weight:800; margin-top:4px; }
+    .dept-name { font-family:'Inter',sans-serif; font-size:14px; font-weight:800; margin-top:4px; }
     .dept-code { font-family:monospace; font-size:10px; color:var(--accent); background:rgba(59,130,246,.08); display:inline-block; padding:1px 6px; border-radius:4px; }
     .dept-desc { font-size:11px; color:var(--text2); line-height:1.4; }
     .dept-footer { display:flex; align-items:center; justify-content:space-between; margin-top:6px; padding-top:10px; border-top:1px solid var(--border); }
@@ -819,16 +853,16 @@ type CatType = 'request'|'nc'|'risk'|'document'|'vendor'|'complaint';
     .roles-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
     .role-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px; }
     .role-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
-    .role-name { font-family:'Syne',sans-serif; font-size:14px; font-weight:800; }
+    .role-name { font-family:'Inter',sans-serif; font-size:14px; font-weight:800; }
     .role-desc { font-size:12px; color:var(--text2); margin-bottom:10px; line-height:1.4; }
     .role-perms { display:flex; flex-wrap:wrap; gap:5px; }
     .perm-chip { font-size:10px; font-family:monospace; background:var(--surface2); border:1px solid var(--border); border-radius:5px; padding:2px 7px; color:var(--text2); }
-    .perm-all { background:rgba(59,130,246,.1); border-color:rgba(59,130,246,.3); color:var(--accent); font-family:'DM Sans',sans-serif; font-weight:700; }
+    .perm-all { background:rgba(59,130,246,.1); border-color:rgba(59,130,246,.3); color:var(--accent); font-family:'Inter',sans-serif; font-weight:700; }
     .perm-more { background:var(--surface); color:var(--text3); }
 
     /* ── Sub-tabs ── */
     .sub-tabs { display:flex; gap:4px; flex-wrap:wrap; }
-    .sub-tab { display:flex; align-items:center; gap:6px; padding:7px 14px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text2); font-size:12px; font-family:'DM Sans',sans-serif; cursor:pointer; transition:all .13s; }
+    .sub-tab { display:flex; align-items:center; gap:6px; padding:7px 14px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text2); font-size:12px; font-family:'Inter',sans-serif; cursor:pointer; transition:all .13s; }
     .sub-tab:hover { background:var(--surface2); color:var(--text); }
     .sub-tab.active { background:rgba(59,130,246,.1); border-color:rgba(59,130,246,.3); color:var(--accent); font-weight:600; }
     .sub-badge { background:var(--surface2); border:1px solid var(--border); border-radius:10px; font-size:9px; font-weight:700; padding:1px 5px; }
@@ -838,11 +872,11 @@ type CatType = 'request'|'nc'|'risk'|'document'|'vendor'|'complaint';
     .cat-name { font-weight:600; font-size:13px; }
     .sla-badge { font-size:11px; font-family:monospace; background:rgba(16,185,129,.1); color:var(--success); border-radius:5px; padding:2px 7px; }
     .usage-badge { font-size:11px; background:var(--surface2); border:1px solid var(--border); border-radius:5px; padding:2px 7px; color:var(--text2); }
-    .link-btn { background:none; border:none; color:var(--accent); font-size:11px; cursor:pointer; font-family:'DM Sans',sans-serif; }
+    .link-btn { background:none; border:none; color:var(--accent); font-size:11px; cursor:pointer; font-family:'Inter',sans-serif; }
 
     /* ── Email templates ── */
     .module-pills { display:flex; gap:5px; flex-wrap:wrap; }
-    .mod-pill { padding:5px 12px; border-radius:20px; border:1px solid var(--border); background:var(--surface); color:var(--text2); font-size:11px; font-family:'DM Sans',sans-serif; cursor:pointer; transition:all .13s; display:flex; align-items:center; gap:5px; }
+    .mod-pill { padding:5px 12px; border-radius:20px; border:1px solid var(--border); background:var(--surface); color:var(--text2); font-size:11px; font-family:'Inter',sans-serif; cursor:pointer; transition:all .13s; display:flex; align-items:center; gap:5px; }
     .mod-pill:hover { background:var(--surface2); }
     .mod-pill.active { background:rgba(59,130,246,.1); border-color:rgba(59,130,246,.3); color:var(--accent); font-weight:600; }
     .tpl-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
@@ -859,7 +893,7 @@ type CatType = 'request'|'nc'|'risk'|'document'|'vendor'|'complaint';
     .mod-complaints,.mod-complaint { background:rgba(239,68,68,.08); color:#f87171; }
     .mod-visits,.mod-visit { background:rgba(16,185,129,.1); color:var(--success); }
     .tpl-actions { display:flex; gap:4px; }
-    .tpl-name { font-family:'Syne',sans-serif; font-size:13px; font-weight:800; }
+    .tpl-name { font-family:'Inter',sans-serif; font-size:13px; font-weight:800; }
     .tpl-event { font-size:11px; color:var(--text2); display:flex; align-items:center; gap:4px; }
     .tpl-subject { font-size:12px; color:var(--text); background:var(--surface2); border-radius:6px; padding:6px 8px; font-family:monospace; }
     .tpl-vars { display:flex; flex-wrap:wrap; gap:4px; }
@@ -882,14 +916,14 @@ type CatType = 'request'|'nc'|'risk'|'document'|'vendor'|'complaint';
     .success-banner { background:rgba(16,185,129,.1); border:1px solid rgba(16,185,129,.3); color:var(--success); padding:10px 16px; border-radius:10px; font-size:13px; display:flex; align-items:center; gap:8px; }
     .settings-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:14px; align-items:start; }
     .settings-section { padding:16px 20px; }
-    .sec-title { font-family:'Syne',sans-serif; font-size:13px; font-weight:800; display:flex; align-items:center; gap:7px; margin-bottom:14px; color:var(--text); }
+    .sec-title { font-family:'Inter',sans-serif; font-size:13px; font-weight:800; display:flex; align-items:center; gap:7px; margin-bottom:14px; color:var(--text); }
     .setting-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid var(--border); }
     .setting-row:last-child { border-bottom:none; }
     .setting-info { flex:1; min-width:0; }
     .setting-label { font-size:13px; font-weight:600; color:var(--text); }
     .setting-desc { font-size:11px; color:var(--text3); margin-top:2px; }
     .setting-control { flex-shrink:0; }
-    .fc-sm { background:var(--surface2); border:1px solid var(--border); border-radius:7px; color:var(--text); font-size:12px; font-family:'DM Sans',sans-serif; padding:6px 10px; outline:none; min-width:150px; }
+    .fc-sm { background:var(--surface2); border:1px solid var(--border); border-radius:7px; color:var(--text); font-size:12px; font-family:'Inter',sans-serif; padding:6px 10px; outline:none; min-width:150px; }
     .fc-sm:focus { border-color:var(--accent); }
     select.fc-sm option { background:var(--surface); }
     .color-row { display:flex; align-items:center; gap:6px; }
@@ -912,7 +946,7 @@ type CatType = 'request'|'nc'|'risk'|'document'|'vendor'|'complaint';
     .modal { background:var(--surface); border:1px solid var(--border); border-radius:16px; width:100%; overflow:hidden; display:flex; flex-direction:column; max-height:90vh; }
     .modal-sm { max-width:380px; } .modal-md { max-width:540px; } .modal-lg { max-width:680px; } .modal-xl { max-width:860px; }
     .modal-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--border); }
-    .modal-title { font-family:'Syne',sans-serif; font-size:15px; font-weight:800; display:flex; align-items:center; gap:8px; }
+    .modal-title { font-family:'Inter',sans-serif; font-size:15px; font-weight:800; display:flex; align-items:center; gap:8px; }
     .modal-close { width:30px; height:30px; border:1px solid var(--border); border-radius:7px; background:none; color:var(--text2); cursor:pointer; font-size:12px; }
     .modal-body { padding:20px; overflow-y:auto; flex:1; }
     .modal-footer { padding:14px 20px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:8px; }
@@ -921,7 +955,7 @@ type CatType = 'request'|'nc'|'risk'|'document'|'vendor'|'complaint';
     .fg { display:flex; flex-direction:column; gap:4px; }
     .fg-2 { grid-column:span 2; }
     .lbl { font-size:11px; font-weight:700; color:var(--text2); text-transform:uppercase; letter-spacing:.4px; }
-    .fc { background:var(--surface2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:13px; font-family:'DM Sans',sans-serif; padding:9px 12px; outline:none; width:100%; transition:border-color .13s; }
+    .fc { background:var(--surface2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:13px; font-family:'Inter',sans-serif; padding:9px 12px; outline:none; width:100%; transition:border-color .13s; }
     .fc:focus { border-color:var(--accent); }
     select.fc option { background:var(--surface); }
     .form-err { background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.2); color:var(--danger); padding:10px 14px; border-radius:8px; font-size:12px; margin-top:10px; }
@@ -931,7 +965,7 @@ type CatType = 'request'|'nc'|'risk'|'document'|'vendor'|'complaint';
     .tpl-editor-main { display:flex; flex-direction:column; gap:12px; }
     .tpl-body-editor { font-family:monospace; font-size:12px; resize:vertical; min-height:220px; }
     .tpl-vars-panel { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:12px; height:fit-content; }
-    .vars-title { font-family:'Syne',sans-serif; font-size:11px; font-weight:800; color:var(--text2); text-transform:uppercase; letter-spacing:.4px; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+    .vars-title { font-family:'Inter',sans-serif; font-size:11px; font-weight:800; color:var(--text2); text-transform:uppercase; letter-spacing:.4px; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
     .var-row { padding:6px 8px; border-radius:6px; cursor:pointer; transition:background .1s; margin-bottom:3px; }
     .var-row:hover { background:var(--border); }
     .var-key { font-family:monospace; font-size:11px; color:var(--accent2); display:block; }
@@ -959,6 +993,7 @@ export class SettingsComponent implements OnInit {
   activeCatType= signal<CatType>('request');
 
   users        = signal<any[]>([]);  loadingUsers = signal(true);
+  toast = signal<{msg:string,type:string}|null>(null);
   userTotal    = signal(0); userPages = signal(1); userPage = signal(1);
   departments  = signal<any[]>([]);  loadingDepts = signal(true);
   roles        = signal<any[]>([]);  loadingRoles = signal(true);  rolesError = signal('');
@@ -982,6 +1017,7 @@ export class SettingsComponent implements OnInit {
   showRoleForm = signal(false); editRoleId = signal<number|null>(null);
   showResetPw  = signal(false); resetPwUser= signal<any>(null);
   saving       = signal(false); formError  = signal('');
+  confirmDeleteId = signal<string|null>(null);  // '<type>:<id>' for two-step delete confirm
   apiError     = signal('');
   roleForm: any = {};
   roleFormPerms = signal<string[]>([]);
@@ -1004,7 +1040,7 @@ export class SettingsComponent implements OnInit {
   tplForm: any  = {};
 
   mainTabs = [
-    { id:'users' as MainTab,          label:'Users',           icon:'fas fa-users',             badge: () => this.users().length },
+    { id:'users' as MainTab,          label:'Users',           icon:'fas fa-users',             badge: () => this.userTotal() },
     { id:'departments' as MainTab,    label:'Departments',     icon:'fas fa-building',          badge: () => this.departments().length },
     { id:'roles' as MainTab,          label:'Roles',           icon:'fas fa-shield-halved',     badge: () => this.roles().length },
     { id:'categories' as MainTab,     label:'Categories',      icon:'fas fa-tags',              badge: null },
@@ -1084,6 +1120,7 @@ export class SettingsComponent implements OnInit {
   openEditUser(u: any) { this.editUserId.set(u.id); this.userForm={name:u.name,email:u.email,employee_id:u.employee_id||'',role_id:u.role_id,department_id:u.department_id||'',phone:u.phone||''}; this.formError.set(''); this.showUserForm.set(true); }
   submitUser() {
     if (!this.userForm.name || !this.userForm.email) { this.formError.set('Name and email are required.'); return; }
+    if (!this.userForm.role_id) { this.formError.set('Please select a role.'); return; }
     this.saving.set(true); this.formError.set('');
     const req = this.editUserId() ? this.adm.updateUser(this.editUserId()!, this.userForm) : this.adm.createUser(this.userForm);
     req.subscribe({
@@ -1091,7 +1128,7 @@ export class SettingsComponent implements OnInit {
       error: e => { this.saving.set(false); this.formError.set(e?.error?.message || Object.values(e?.error?.errors||{})?.[0] as string || 'Failed.'); }
     });
   }
-  toggleUser(u: any) { this.adm.toggleUser(u.id).subscribe({ next: () => this.loadUsers() }); }
+  toggleUser(u: any) { this.adm.toggleUser(u.id).subscribe({ next: () => this.loadUsers(), error: e => this.showToast(e?.error?.message || 'Action failed', 'error') }); }
   openResetPw(u: any) { this.resetPwUser.set(u); this.newPassword=''; this.formError.set(''); this.showResetPw.set(true); }
   submitResetPw() {
     if (this.newPassword.length < 8) { this.formError.set('Password must be at least 8 characters.'); return; }
@@ -1122,8 +1159,13 @@ export class SettingsComponent implements OnInit {
     });
   }
   deleteDept(d: any) {
-    if (!confirm(`Delete "${d.name}"?`)) return;
-    this.adm.deleteDept(d.id).subscribe({ next: () => this.loadDepts(), error: e => alert(e?.error?.message||'Cannot delete.') });
+    const key = `dept:${d.id}`;
+    if (this.confirmDeleteId() !== key) { this.confirmDeleteId.set(key); return; }
+    this.confirmDeleteId.set(null);
+    this.adm.deleteDept(d.id).subscribe({
+      next: () => { this.loadDepts(); this.showToast('Department deleted', 'success'); },
+      error: e => this.showToast(e?.error?.message || 'Cannot delete department.', 'error')
+    });
   }
 
   // ── Roles ──
@@ -1170,9 +1212,14 @@ export class SettingsComponent implements OnInit {
     });
   }
   deleteRole(r: any) {
-    if ((r.users_count || 0) > 0) { alert('Cannot delete a role with assigned users.'); return; }
-    if (!confirm('Delete role "' + r.name + '"?')) return;
-    this.adm.deleteRole(r.id).subscribe({ next: () => this.loadRoles(), error: e => alert(e?.error?.message || 'Delete failed.') });
+    if ((r.users_count || 0) > 0) { this.showToast('Cannot delete a role with assigned users.', 'error'); return; }
+    const key = `role:${r.id}`;
+    if (this.confirmDeleteId() !== key) { this.confirmDeleteId.set(key); return; }
+    this.confirmDeleteId.set(null);
+    this.adm.deleteRole(r.id).subscribe({
+      next: () => { this.loadRoles(); this.showToast('Role deleted', 'success'); },
+      error: e => this.showToast(e?.error?.message || 'Delete failed.', 'error')
+    });
   }
 
   loadRoles() {
@@ -1188,8 +1235,12 @@ export class SettingsComponent implements OnInit {
     this.loadingCats.set(true);
     let done = 0;
     const types: CatType[] = ['request','nc','risk','document','vendor','complaint'];
+    const finish = () => { if (++done === types.length) this.loadingCats.set(false); };
     types.forEach(t => {
-      this.adm.categories(t).subscribe({ next: r => { this.allCats[t]=r||[]; if (++done===types.length) this.loadingCats.set(false); } });
+      this.adm.categories(t).subscribe({
+        next: r => { this.allCats[t] = r || []; finish(); },
+        error: ()  => { this.allCats[t] = [];   finish(); }
+      });
     });
   }
   switchCatType(t: CatType) { this.activeCatType.set(t); if (!this.allCats[t]) { this.loadingCats.set(true); this.adm.categories(t).subscribe(r=>{ this.allCats[t]=r||[]; this.loadingCats.set(false); }); } }
@@ -1210,8 +1261,16 @@ export class SettingsComponent implements OnInit {
     });
   }
   deleteCategory(c: any) {
-    if (!confirm(`Delete "${c.name}"?`)) return;
-    this.adm.deleteCategory(this.activeCatType(), c.id).subscribe({ next: () => this.adm.categories(this.activeCatType()).subscribe(r=>this.allCats[this.activeCatType()]=r||[]) });
+    const key = `cat:${c.id}`;
+    if (this.confirmDeleteId() !== key) { this.confirmDeleteId.set(key); return; }
+    this.confirmDeleteId.set(null);
+    this.adm.deleteCategory(this.activeCatType(), c.id).subscribe({
+      next: () => {
+        this.showToast('Category deleted', 'success');
+        this.adm.categories(this.activeCatType()).subscribe(r => this.allCats[this.activeCatType()] = r || []);
+      },
+      error: e => this.showToast(e?.error?.message || 'Cannot delete — category may be in use.', 'error')
+    });
   }
 
   // ── Email Templates ──
@@ -1223,10 +1282,15 @@ export class SettingsComponent implements OnInit {
   }
   openTplForm() { this.editTplId.set(null); this.tplForm={name:'',module:'requests',trigger_event:'',subject:'',body_html:'',is_active:true}; this.formError.set(''); this.showTplForm.set(true); }
   openEditTpl(t: any) { this.editTplId.set(t.id); this.tplForm={...t}; this.formError.set(''); this.showTplForm.set(true); }
-  toggleTemplate(t: any) { this.adm.updateTemplate(t.id, {is_active:!t.is_active}).subscribe({next:()=>this.loadTemplates()}); }
+  toggleTemplate(t: any) { this.adm.updateTemplate(t.id, {is_active:!t.is_active}).subscribe({next:()=>this.loadTemplates(), error: e => this.showToast(e?.error?.message || 'Toggle failed', 'error')}); }
   deleteTpl(t: any) {
-    if (!confirm(`Delete template "${t.name}"?`)) return;
-    this.adm.deleteTemplate(t.id).subscribe({next:()=>this.loadTemplates()});
+    const key = `tpl:${t.id}`;
+    if (this.confirmDeleteId() !== key) { this.confirmDeleteId.set(key); return; }
+    this.confirmDeleteId.set(null);
+    this.adm.deleteTemplate(t.id).subscribe({
+      next: () => { this.loadTemplates(); this.showToast('Template deleted', 'success'); },
+      error: e => this.showToast(e?.error?.message || 'Delete failed.', 'error')
+    });
   }
   submitTpl() {
     if (!this.tplForm.name || !this.tplForm.subject || !this.tplForm.body_html) { this.formError.set('Name, subject and body are required.'); return; }
@@ -1250,14 +1314,14 @@ export class SettingsComponent implements OnInit {
     this.loadingSettings.set(true);
     this.adm.settings().subscribe({ next: r => { this.systemSettings.set(r||[]); r.forEach((s:any) => this.settingsMap[s.key] = s.type==='boolean' ? (s.value==='1'||s.value===true) : s.value); this.loadingSettings.set(false); }, error: () => this.loadingSettings.set(false) });
   }
-  settingGroups() {
+  settingGroups = computed(() => {
     const groups: Record<string,any> = {};
-    this.systemSettings().forEach(s => {
+    this.systemSettings().forEach((s: any) => {
       if (!groups[s.group]) groups[s.group] = { key:s.group, label:this.groupLabel(s.group), items:[] };
       groups[s.group].items.push(s);
     });
     return Object.values(groups);
-  }
+  });
   saveAllSettings() {
     this.savingSettings.set(true);
     const map: Record<string,string> = {};
@@ -1275,7 +1339,22 @@ export class SettingsComponent implements OnInit {
   }
 
   // ── Activity Log ──
-  loadLog() { this.loadingLog.set(true); this.adm.activityLog().subscribe({next:r=>{this.activityLog.set(r.data||r||[]); this.loadingLog.set(false);},error:()=>this.loadingLog.set(false)}); }
+  logPage = signal(1); logLastPage = signal(1); logTotal = signal(0);
+
+  loadLog() {
+    this.loadingLog.set(true);
+    this.adm.activityLog({ page: this.logPage(), per_page: 50 }).subscribe({
+      next: r => {
+        this.activityLog.set(r.data || (Array.isArray(r) ? r : []));
+        this.logTotal.set(r.total || 0);
+        this.logLastPage.set(r.last_page || 1);
+        this.loadingLog.set(false);
+      },
+      error: () => this.loadingLog.set(false)
+    });
+  }
+  prevLogPage() { if (this.logPage() > 1) { this.logPage.update(p => p - 1); this.loadLog(); } }
+  nextLogPage() { if (this.logPage() < this.logLastPage()) { this.logPage.update(p => p + 1); this.loadLog(); } }
 
   // ── Live preview helpers ──
   previewColor(key: string, value: string) {
@@ -1286,8 +1365,10 @@ export class SettingsComponent implements OnInit {
   }
 
   // ── Helpers ──
-  prevPage() { this.userPage.update(p => p - 1); this.loadUsers(); }
-  nextPage() { this.userPage.update(p => p + 1); this.loadUsers(); }
+  private userSearchTimer: any;
+  onUserSearch() { clearTimeout(this.userSearchTimer); this.userSearchTimer = setTimeout(() => { this.userPage.set(1); this.loadUsers(); }, 400); }
+  prevPage() { if (this.userPage() > 1) { this.userPage.update(p => p - 1); this.loadUsers(); } }
+  nextPage() { if (this.userPage() < this.userPages()) { this.userPage.update(p => p + 1); this.loadUsers(); } }
   formatEvent(e: string): string { return e ? e.replace(/_/g, ' ') : ''; }
 
   avatarColor(name: string): string {
@@ -1301,4 +1382,9 @@ export class SettingsComponent implements OnInit {
   }
   groupLabel(g: string): string { return ({general:'General',notifications:'Notifications',security:'Security',appearance:'Appearance'} as any)[g]||g; }
   groupIcon(g: string): string { return ({general:'fas fa-sliders',notifications:'fas fa-bell',security:'fas fa-lock',appearance:'fas fa-palette'} as any)[g]||'fas fa-gear'; }
+  showToast(msg: string, type: string): void {
+    this.toast.set({ msg, type });
+    setTimeout(() => this.toast.set(null), 3500);
+  }
+
 }

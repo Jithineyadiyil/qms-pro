@@ -102,7 +102,7 @@ interface OverdueItem {
 export class DashboardComponent implements OnInit {
   // ── DI ────────────────────────────────────────────────────────────────────
   private readonly http = inject(HttpClient);
-  readonly auth = inject(AuthService);
+  readonly auth = inject(AuthService) as AuthService;
 
   // ── State signals ──────────────────────────────────────────────────────────
   readonly loading = signal<boolean>(true);
@@ -206,14 +206,16 @@ export class DashboardComponent implements OnInit {
    * Returns user's display name from the AuthService signal.
    */
   get userName(): string {
-    return this.auth.currentUser()?.name ?? 'User';
+    const u = this.auth.currentUser() as { name?: string } | null;
+    return u?.name ?? 'User';
   }
 
   /**
    * Returns user's role name from the AuthService signal.
    */
   get userRole(): string {
-    return this.auth.currentUser()?.role?.name ?? '';
+    const u = this.auth.currentUser() as { role?: { name?: string } } | null;
+    return u?.role?.name ?? '';
   }
 
   // ── Dev mock (remove after API is live) ───────────────────────────────────

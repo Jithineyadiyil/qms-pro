@@ -16,7 +16,7 @@ export class CheckedCountPipe implements PipeTransform {
 @Component({
   selector: 'app-audit-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, FormsModule, CheckedCountPipe],
+  imports: [CommonModule, FormsModule, CheckedCountPipe],
   template: `
 <div class="stats-row">
   @for (s of stats(); track s.label) {
@@ -543,11 +543,14 @@ export class CheckedCountPipe implements PipeTransform {
     </div>
   </div>
 }
+@if (toast()) {
+  <div class="toast" [class]="'toast-' + toast()!.type">{{ toast()!.msg }}</div>
+}
   `,
   styles: [`
     .stats-row{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
     .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;flex:1;min-width:110px;text-align:center}
-    .stat-num{font-family:'Syne',sans-serif;font-size:26px;font-weight:800}
+    .stat-num{font-family:'Inter',sans-serif;font-size:26px;font-weight:800}
     .stat-lbl{font-size:11px;color:var(--text2);margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
     .page-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:12px;flex-wrap:wrap}
     .filter-group{display:flex;gap:8px;flex-wrap:wrap}
@@ -603,6 +606,7 @@ export class AuditListComponent implements OnInit, OnDestroy {
   totalPages  = signal(1);
   stats       = signal<any[]>([]);
   detailAudit = signal<any>(null);
+  toast = signal<{msg:string,type:string}|null>(null);
   programs    = signal<any[]>([]);
   users       = signal<any[]>([]);
   departments = signal<any[]>([]);
@@ -717,14 +721,14 @@ export class AuditListComponent implements OnInit, OnDestroy {
     }});
   }
 
-  doNotify()      { this.svc.notify(this.detailAudit()!.id).subscribe({     next: () => { this.reloadDetail(); this.load(); this.loadStats(); }, error:(e:any)=>alert(e?.error?.message||'Failed') }); }
-  doStart()       { this.svc.start(this.detailAudit()!.id).subscribe({      next: () => { this.reloadDetail(); this.load(); this.loadStats(); }, error:(e:any)=>alert(e?.error?.message||'Failed') }); }
-  doIssueReport() { this.svc.issueReport(this.detailAudit()!.id, this.reportForm).subscribe({ next: () => { this.reloadDetail(); this.load(); this.loadStats(); }, error:(e:any)=>alert(e?.error?.message||'Failed') }); }
-  doClose()       { if(!confirm('Close this audit?')) return; this.svc.close(this.detailAudit()!.id).subscribe({ next: () => { this.reloadDetail(); this.load(); this.loadStats(); }, error:(e:any)=>alert(e?.error?.message||'Failed') }); }
+  doNotify()      { this.svc.notify(this.detailAudit()!.id).subscribe({     next: () => { this.reloadDetail(); this.load(); this.loadStats(); }, error:(e:any)=>this.showToast(e?.error?.message||'Failed','error') }); }
+  doStart()       { this.svc.start(this.detailAudit()!.id).subscribe({      next: () => { this.reloadDetail(); this.load(); this.loadStats(); }, error:(e:any)=>this.showToast(e?.error?.message||'Failed','error') }); }
+  doIssueReport() { this.svc.issueReport(this.detailAudit()!.id, this.reportForm).subscribe({ next: () => { this.reloadDetail(); this.load(); this.loadStats(); }, error:(e:any)=>this.showToast(e?.error?.message||'Failed','error') }); }
+  doClose()       {  this.svc.close(this.detailAudit()!.id).subscribe({ next: () => { this.reloadDetail(); this.load(); this.loadStats(); }, error:(e:any)=>this.showToast(e?.error?.message||'Failed','error') }); }
 
   addMember() {
     const v = this.detailAudit(); if(!v||!this.newMember.user_id) return;
-    this.svc.addTeamMember(v.id, this.newMember).subscribe({ next: () => { this.newMember={user_id:'',role:'auditor'}; this.reloadDetail(); }, error:(e:any)=>alert(e?.error?.message||'Failed') });
+    this.svc.addTeamMember(v.id, this.newMember).subscribe({ next: () => { this.newMember={user_id:'',role:'auditor'}; this.reloadDetail(); }, error:(e:any)=>this.showToast(e?.error?.message||'Failed','error') });
   }
 
   removeMember(m: any) {
@@ -800,7 +804,7 @@ export class AuditListComponent implements OnInit, OnDestroy {
     const v = this.detailAudit(); if(!v||!this.newFinding.description.trim()) return;
     const payload = {...this.newFinding};
     if(!payload.assignee_id) delete payload.assignee_id;
-    this.svc.addFinding(v.id, payload).subscribe({ next: () => { this.newFinding={finding_type:'minor_nc',description:'',requirement_ref:'',evidence:'',assignee_id:''}; this.showAddFinding=false; this.reloadDetail(); }, error:(e:any)=>alert(e?.error?.message||'Failed') });
+    this.svc.addFinding(v.id, payload).subscribe({ next: () => { this.newFinding={finding_type:'minor_nc',description:'',requirement_ref:'',evidence:'',assignee_id:''}; this.showAddFinding=false; this.reloadDetail(); }, error:(e:any)=>this.showToast(e?.error?.message||'Failed','error') });
   }
 
   closeFinding(f: any) {
@@ -808,8 +812,8 @@ export class AuditListComponent implements OnInit, OnDestroy {
   }
 
   doRaiseCapa(f: any) {
-    if(!confirm('Raise a CAPA for this finding?')) return;
-    this.svc.raiseCapa(this.detailAudit()!.id, f.id).subscribe({ next: () => { this.reloadDetail(); alert('CAPA created successfully.'); }, error:(e:any)=>alert(e?.error?.message||'Failed') });
+    
+    this.svc.raiseCapa(this.detailAudit()!.id, f.id).subscribe({ next: () => { this.reloadDetail(); this.showToast('CAPA created successfully.', 'success'); }, error:(e:any)=>this.showToast(e?.error?.message||'Failed','error') });
   }
 
   responseClass(r: string) { return {yes:'resp-yes',no:'resp-no',partial:'resp-partial',na:'resp-na'}[r]||''; }
@@ -995,5 +999,11 @@ ${autoPrint ? '<script>window.onload=()=>window.print();<\/script>' : ''}
 </body></html>`;
   }
 
-    ngOnDestroy() { this.destroy$.next(); this.destroy$.complete(); }
+    
+  showToast(msg: string, type: string): void {
+    this.toast.set({ msg, type });
+    setTimeout(() => this.toast.set(null), 3500);
+  }
+
+  ngOnDestroy() { this.destroy$.next(); this.destroy$.complete(); }
 }

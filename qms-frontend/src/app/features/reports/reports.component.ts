@@ -4,8 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { ApiService }      from '../../core/services/api.service';
 import { LanguageService } from '../../core/services/language.service';
 
-type Tab = 'kpi'|'nc'|'capa'|'risk'|'complaints'|'audits'|'sla'|'okr'|'vendors'
-          |'rec_complaints'|'rec_ncs'|'rec_capas'|'rec_risks'|'rec_audits'|'rec_requests';
+type Tab = 'kpi'|'nc'|'capa'|'risk'|'complaints'|'audits'|'sla'|'okr'|'vendors'|'visits'
+          |'rec_complaints'|'rec_ncs'|'rec_capas'|'rec_risks'|'rec_audits'|'rec_requests'|'rec_visits';
 
 @Component({
   selector: 'app-reports',
@@ -362,6 +362,45 @@ type Tab = 'kpi'|'nc'|'capa'|'risk'|'complaints'|'audits'|'sla'|'okr'|'vendors'
       </div>
     }
 
+    <!-- ═══════════════ VISITS ═══════════════ -->
+    @if (activeTab()==='visits' && !loading()) {
+      <div class="stat-strip">
+        <div class="ss-item"><div class="ss-v acc">{{d()?.summary?.total??'—'}}</div><div class="ss-l">Total Visits</div></div>
+        <div class="ss-item"><div class="ss-v grn">{{d()?.summary?.completed??'—'}}</div><div class="ss-l">Completed</div></div>
+        <div class="ss-item"><div class="ss-v" [style.color]="d()?.summary?.completion_rate>=80?'var(--success)':'var(--warning)'">{{d()?.summary?.completion_rate??'—'}}%</div><div class="ss-l">Completion Rate</div></div>
+        <div class="ss-item"><div class="ss-v red">{{d()?.summary?.cancelled??'—'}}</div><div class="ss-l">Cancelled</div></div>
+        <div class="ss-item"><div class="ss-v" [style.color]="satCol(d()?.summary?.avg_rating)">{{d()?.summary?.avg_rating??'—'}}/5</div><div class="ss-l">Avg Rating</div></div>
+        <div class="ss-item"><div class="ss-v acc2">{{d()?.summary?.virtual??'—'}}</div><div class="ss-l">Virtual</div></div>
+        <div class="ss-item"><div class="ss-v red">{{d()?.summary?.open_findings??'—'}}</div><div class="ss-l">Open Findings</div></div>
+      </div>
+      <div class="ch-row">
+        <div class="card flex2"><div class="ch-title">Visit Trend — 12 Months</div><canvas id="visitTrend" height="145"></canvas></div>
+        <div class="card flex1"><div class="ch-title">By Type</div><div class="dnu"><canvas id="visitType" width="155" height="155"></canvas></div><div id="visitTypeL" class="leg"></div></div>
+        <div class="card flex1"><div class="ch-title">By Status</div><div class="dnu"><canvas id="visitStatus" width="155" height="155"></canvas></div><div id="visitStatusL" class="leg"></div></div>
+      </div>
+      <div class="ch-row">
+        <div class="card flex1"><div class="ch-title">Top Clients by Visits</div><canvas id="visitClient" height="140"></canvas></div>
+        <div class="card flex1"><div class="ch-title">Findings by Type</div><div class="dnu"><canvas id="findingType" width="155" height="140"></canvas></div><div id="findingTypeL" class="leg"></div></div>
+      </div>
+      <div class="card">
+        <div class="ch-title">Recent Visits</div>
+        <table class="table"><thead><tr><th>Ref</th><th>Client</th><th>Type</th><th>Status</th><th>Date</th><th>Host</th><th>Rating</th><th>Virtual</th></tr></thead>
+          <tbody>@for(v of d()?.recent||[];track v.id){
+            <tr>
+              <td><span class="ref">{{v.reference_no}}</span></td>
+              <td class="td-t">{{v.client||'—'}}</td>
+              <td class="sm">{{fmtSlug(v.type)}}</td>
+              <td><span class="badge" [class]="visitStCls(v.status)">{{fmtSlug(v.status)}}</span></td>
+              <td class="sm">{{v.visit_date|date:'dd MMM yy'}}</td>
+              <td class="sm">{{v.host||'—'}}</td>
+              <td class="tc">@if(v.rating){<span style="color:#f59e0b">{{ratingStars(v.rating)}}</span>}@else{<span class="muted">—</span>}</td>
+              <td class="tc">@if(v.is_virtual){<i class="fas fa-video" style="color:var(--accent)"></i>}@else{<span class="muted">—</span>}</td>
+            </tr>}
+          </tbody>
+        </table>
+      </div>
+    }
+
     <!-- ═══════════════ RECORD TABS ═══════════════ -->
     @if (isRecordTab() && !loading()) {
       <!-- Filter bar -->
@@ -406,6 +445,19 @@ type Tab = 'kpi'|'nc'|'capa'|'risk'|'complaints'|'audits'|'sla'|'okr'|'vendors'
           <div class="rec-chip" [class]="c.cls"><div class="rc-v">{{c.value}}</div><div class="rc-l">{{c.label}}</div></div>
         }
       </div>
+
+      <!-- Records Pagination -->
+      @if (recLastPage() > 1) {
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span style="font-size:12px;color:var(--text2)">Page {{ recPage() }} of {{ recLastPage() }}</span>
+          <button class="exp-btn" [disabled]="recPage()<=1" (click)="prevRecPage()">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <button class="exp-btn" [disabled]="recPage()>=recLastPage()" (click)="nextRecPage()">
+            <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
+      }
 
       @if (!recRows().length) {
         <div class="empty-st"><i class="fas fa-inbox"></i><div>No records. Adjust filters or date range.</div></div>
@@ -507,6 +559,9 @@ type Tab = 'kpi'|'nc'|'capa'|'risk'|'complaints'|'audits'|'sla'|'okr'|'vendors'
 
   </div><!-- /rpt-body -->
 </div><!-- /rpt-shell -->
+@if (toast()) {
+  <div class="toast" [class]="'toast-' + toast()!.type">{{ toast()!.msg }}</div>
+}
   `,
   styles: [`
     :host { display:block; }
@@ -514,28 +569,28 @@ type Tab = 'kpi'|'nc'|'capa'|'risk'|'complaints'|'audits'|'sla'|'okr'|'vendors'
 
     /* Sidebar */
     .rpt-aside { width:200px; flex-shrink:0; background:var(--surface); border-right:1px solid var(--border); border-radius:14px 0 0 14px; padding:0 0 12px; display:flex; flex-direction:column; overflow-y:auto; }
-    .aside-header { display:flex; align-items:center; gap:8px; padding:14px 16px 12px; border-bottom:1px solid var(--border); font-family:'Syne',sans-serif; font-size:14px; font-weight:800; color:var(--accent); }
+    .aside-header { display:flex; align-items:center; gap:8px; padding:14px 16px 12px; border-bottom:1px solid var(--border); font-family:'Inter',sans-serif; font-size:14px; font-weight:800; color:var(--accent); }
     .aside-group { font-size:10px; font-weight:700; color:var(--text3); letter-spacing:1px; text-transform:uppercase; padding:10px 16px 3px; }
-    .aside-btn { display:flex; align-items:center; gap:8px; padding:7px 16px; border:none; background:none; color:var(--text2); font-size:12px; font-weight:500; cursor:pointer; font-family:'DM Sans',sans-serif; text-align:left; width:100%; transition:all .13s; border-left:2px solid transparent; }
+    .aside-btn { display:flex; align-items:center; gap:8px; padding:7px 16px; border:none; background:none; color:var(--text2); font-size:12px; font-weight:500; cursor:pointer; font-family:'Inter',sans-serif; text-align:left; width:100%; transition:all .13s; border-left:2px solid transparent; }
     .aside-btn:hover { background:var(--surface2); color:var(--text); }
     .aside-btn.active { background:rgba(59,130,246,.1); color:var(--accent); border-left-color:var(--accent); font-weight:700; }
     .aside-btn i { width:13px; text-align:center; font-size:11px; }
     .aside-spacer { flex:1; min-height:8px; }
     .aside-dr { display:flex; align-items:center; gap:6px; padding:4px 12px 8px; flex-wrap:wrap; }
-    .aside-dr input { background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:10px; padding:4px 6px; width:100%; outline:none; font-family:'DM Sans',sans-serif; }
+    .aside-dr input { background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:10px; padding:4px 6px; width:100%; outline:none; font-family:'Inter',sans-serif; }
     .aside-dr span { font-size:11px; color:var(--text3); }
-    .exp-btn { display:flex; align-items:center; gap:6px; margin:2px 10px; padding:6px 10px; border:1px solid var(--border); border-radius:7px; background:none; color:var(--text2); font-size:11px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all .13s; }
+    .exp-btn { display:flex; align-items:center; gap:6px; margin:2px 10px; padding:6px 10px; border:1px solid var(--border); border-radius:7px; background:none; color:var(--text2); font-size:11px; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; transition:all .13s; }
     .exp-btn:hover:not([disabled]) { background:var(--surface2); color:var(--text); }
     .exp-btn[disabled] { opacity:.35; cursor:default; }
 
     /* Body */
     .rpt-body { flex:1; padding:18px; min-width:0; background:var(--bg); border-radius:0 14px 14px 0; display:flex; flex-direction:column; gap:12px; }
     .rpt-topbar { display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:8px; }
-    .rpt-title { font-family:'Syne',sans-serif; font-size:17px; font-weight:800; }
+    .rpt-title { font-family:'Inter',sans-serif; font-size:17px; font-weight:800; }
     .rpt-sub { font-size:11px; color:var(--text2); margin-top:2px; }
     .search-box { display:flex; align-items:center; gap:7px; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:6px 11px; min-width:240px; }
     .search-box i { color:var(--text3); font-size:11px; }
-    .search-box input { background:none; border:none; outline:none; color:var(--text); font-size:12px; font-family:'DM Sans',sans-serif; flex:1; }
+    .search-box input { background:none; border:none; outline:none; color:var(--text); font-size:12px; font-family:'Inter',sans-serif; flex:1; }
     .search-box button { background:none; border:none; color:var(--text3); cursor:pointer; padding:0; font-size:10px; }
     .spinning { animation:spin .8s linear infinite; }
     @keyframes spin { to{transform:rotate(360deg)} }
@@ -552,7 +607,7 @@ type Tab = 'kpi'|'nc'|'capa'|'risk'|'complaints'|'audits'|'sla'|'okr'|'vendors'
     /* Band */
     .band { display:flex; align-items:center; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:10px 0; }
     .bc { flex:1; text-align:center; padding:4px 12px; }
-    .bv { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; }
+    .bv { font-family:'Inter',sans-serif; font-size:22px; font-weight:800; }
     .bl { font-size:10px; color:var(--text2); margin-top:1px; }
     .bd { width:1px; height:28px; background:var(--border); }
     .health-val { font-size:20px !important; }
@@ -576,7 +631,7 @@ type Tab = 'kpi'|'nc'|'capa'|'risk'|'complaints'|'audits'|'sla'|'okr'|'vendors'
     .kwarn-badge,.kst-warn { background:rgba(245,158,11,.15); color:var(--warning); }
     .kbad-badge,.kst-bad   { background:rgba(239,68,68,.15);  color:var(--danger); }
     .kst-na { background:var(--surface2); color:var(--text3); }
-    .kpi-num { font-family:'Syne',sans-serif; font-size:30px; font-weight:800; line-height:1; margin-bottom:4px; }
+    .kpi-num { font-family:'Inter',sans-serif; font-size:30px; font-weight:800; line-height:1; margin-bottom:4px; }
     .kpi-lbl { font-size:11px; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:.4px; }
     .kpi-tgt { font-size:10px; color:var(--text3); margin-top:2px; }
     .kpi-bar { height:4px; background:var(--border); border-radius:2px; margin-top:10px; position:relative; overflow:hidden; }
@@ -592,19 +647,19 @@ type Tab = 'kpi'|'nc'|'capa'|'risk'|'complaints'|'audits'|'sla'|'okr'|'vendors'
     .ks-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
     .ks-dot.kst-good { background:var(--success); } .ks-dot.kst-warn { background:var(--warning); } .ks-dot.kst-bad { background:var(--danger); } .ks-dot.kst-na { background:var(--text3); }
     .ks-name { flex:1; font-size:12px; color:var(--text2); }
-    .ks-val { font-family:'Syne',sans-serif; font-size:13px; font-weight:800; }
+    .ks-val { font-family:'Inter',sans-serif; font-size:13px; font-weight:800; }
     .ks-tgt { font-size:10px; color:var(--text3); }
 
     /* Stat strip */
     .stat-strip { display:flex; flex-wrap:wrap; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:10px 0; }
     .ss-item { flex:1; min-width:80px; text-align:center; padding:4px 12px; border-right:1px solid var(--border); }
     .ss-item:last-child { border-right:none; }
-    .ss-v { font-family:'Syne',sans-serif; font-size:20px; font-weight:800; }
+    .ss-v { font-family:'Inter',sans-serif; font-size:20px; font-weight:800; }
     .ss-l { font-size:10px; color:var(--text2); margin-top:1px; }
     .red  { color:var(--danger); }  .grn { color:var(--success); }
     .warn { color:var(--warning); } .muted { color:var(--text2); }
     .ora  { color:#fb923c; }        .acc  { color:var(--accent); }  .acc2 { color:var(--accent2); }
-    .fw6  { font-weight:600; }      .fw7  { font-family:'Syne',sans-serif; font-weight:700; }
+    .fw6  { font-weight:600; }      .fw7  { font-family:'Inter',sans-serif; font-weight:700; }
     .tc   { text-align:center; }    .sm   { font-size:11px; color:var(--text2); white-space:nowrap; }
 
     /* Charts */
@@ -623,7 +678,7 @@ type Tab = 'kpi'|'nc'|'capa'|'risk'|'complaints'|'audits'|'sla'|'okr'|'vendors'
     .heat-inner { flex:1; }
     .heat-row { display:flex; gap:3px; margin-bottom:3px; align-items:center; }
     .heat-ax { width:14px; font-size:10px; color:var(--text3); text-align:center; flex-shrink:0; }
-    .heat-cell { flex:1; aspect-ratio:1; border-radius:5px; display:flex; align-items:center; justify-content:center; font-family:'Syne',sans-serif; font-size:12px; font-weight:800; min-height:32px; cursor:default; }
+    .heat-cell { flex:1; aspect-ratio:1; border-radius:5px; display:flex; align-items:center; justify-content:center; font-family:'Inter',sans-serif; font-size:12px; font-weight:800; min-height:32px; cursor:default; }
     .h-low  { background:rgba(16,185,129,.18); color:#10b981; }
     .h-med  { background:rgba(245,158,11,.22);  color:#f59e0b; }
     .h-high { background:rgba(249,115,22,.28);  color:#fb923c; }
@@ -634,7 +689,7 @@ type Tab = 'kpi'|'nc'|'capa'|'risk'|'complaints'|'audits'|'sla'|'okr'|'vendors'
     .hl { font-size:10px; padding:2px 6px; border-radius:5px; font-weight:700; }
     .hl-l { background:rgba(16,185,129,.12); color:var(--success); } .hl-m { background:rgba(245,158,11,.12); color:var(--warning); }
     .hl-h { background:rgba(249,115,22,.12); color:#fb923c; }        .hl-c { background:rgba(239,68,68,.12); color:var(--danger); }
-    .score-pill { display:inline-block; padding:1px 6px; border-radius:5px; font-family:'Syne',sans-serif; font-weight:700; font-size:11px; }
+    .score-pill { display:inline-block; padding:1px 6px; border-radius:5px; font-family:'Inter',sans-serif; font-weight:700; font-size:11px; }
 
     /* Top bar chart */
     .top-bar-row { display:flex; align-items:center; gap:10px; padding:5px 0; border-bottom:1px solid var(--border); }
@@ -642,7 +697,7 @@ type Tab = 'kpi'|'nc'|'capa'|'risk'|'complaints'|'audits'|'sla'|'okr'|'vendors'
     .tbr-name { font-size:12px; font-weight:600; min-width:90px; }
     .tbr-bar  { flex:1; height:5px; background:var(--border); border-radius:3px; overflow:hidden; }
     .tbr-bar div { height:100%; background:var(--danger); border-radius:3px; }
-    .tbr-val  { font-family:'Syne',sans-serif; font-size:13px; font-weight:800; color:var(--danger); }
+    .tbr-val  { font-family:'Inter',sans-serif; font-size:13px; font-weight:800; color:var(--danger); }
 
     /* SLA */
     .sla-list { display:flex; flex-direction:column; gap:8px; }
@@ -656,7 +711,7 @@ type Tab = 'kpi'|'nc'|'capa'|'risk'|'complaints'|'audits'|'sla'|'okr'|'vendors'
     .sla-track { flex:1; height:7px; background:var(--border); border-radius:4px; overflow:hidden; }
     .sla-fill  { height:100%; border-radius:4px; transition:width .7s; }
     .slaf-good { background:var(--success); } .slaf-warning { background:var(--warning); } .slaf-critical { background:var(--danger); } .slaf-no_data { background:var(--text3); }
-    .sla-pct { font-family:'Syne',sans-serif; font-size:14px; font-weight:800; min-width:42px; text-align:right; }
+    .sla-pct { font-family:'Inter',sans-serif; font-size:14px; font-weight:800; min-width:42px; text-align:right; }
     .slap-good { color:var(--success); } .slap-warning { color:var(--warning); } .slap-critical { color:var(--danger); } .slap-no_data { color:var(--text3); }
     .sla-pills { display:flex; gap:5px; }
     .sp { font-size:10px; font-weight:700; padding:2px 6px; border-radius:5px; }
@@ -677,18 +732,18 @@ type Tab = 'kpi'|'nc'|'capa'|'risk'|'complaints'|'audits'|'sla'|'okr'|'vendors'
     .okr-bar   { flex:1; height:5px; background:var(--border); border-radius:3px; overflow:hidden; }
     .okr-bar > div { height:100%; border-radius:3px; transition:width .7s; }
     .of-good   { background:var(--success); } .of-warn { background:var(--warning); } .of-bad { background:var(--danger); }
-    .okr-pct   { font-family:'Syne',sans-serif; font-size:13px; font-weight:800; min-width:34px; text-align:right; }
+    .okr-pct   { font-family:'Inter',sans-serif; font-size:13px; font-weight:800; min-width:34px; text-align:right; }
 
     /* Records */
     .rec-filters { display:flex; gap:8px; flex-wrap:wrap; align-items:center; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:10px 14px; }
-    .flt-sel { background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:12px; font-family:'DM Sans',sans-serif; padding:5px 8px; outline:none; }
+    .flt-sel { background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:12px; font-family:'Inter',sans-serif; padding:5px 8px; outline:none; }
     .flt-sel option { background:var(--surface); }
     .rec-total { font-size:12px; font-weight:700; color:var(--text2); margin-left:auto; }
-    .flt-clr { display:flex; align-items:center; gap:5px; background:none; border:1px solid var(--border); border-radius:6px; color:var(--text2); font-size:11px; font-weight:600; padding:5px 9px; cursor:pointer; font-family:'DM Sans',sans-serif; }
+    .flt-clr { display:flex; align-items:center; gap:5px; background:none; border:1px solid var(--border); border-radius:6px; color:var(--text2); font-size:11px; font-weight:600; padding:5px 9px; cursor:pointer; font-family:'Inter',sans-serif; }
     .flt-clr:hover { background:var(--surface2); }
     .rec-chips { display:flex; flex-wrap:wrap; gap:8px; }
     .rec-chip { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:7px 14px; display:flex; flex-direction:column; align-items:center; min-width:70px; }
-    .rc-v { font-family:'Syne',sans-serif; font-size:18px; font-weight:800; }
+    .rc-v { font-family:'Inter',sans-serif; font-size:18px; font-weight:800; }
     .rc-l { font-size:10px; color:var(--text2); margin-top:1px; }
     .chip-red .rc-v  { color:var(--danger); }  .chip-red  { border-color:rgba(239,68,68,.2); }
     .chip-grn .rc-v  { color:var(--success); } .chip-grn  { border-color:rgba(16,185,129,.2); }
@@ -712,10 +767,14 @@ export class ReportsComponent implements OnInit, OnDestroy {
   data       = signal<any>(null);
   recRows    = signal<any[]>([]);
   recTotal   = signal(0);
+  recPage    = signal(1);
+  recLastPage= signal(1);
   recFilters = signal<any>(null);
+  recSummaryData = signal<any>(null);
+  toast = signal<{msg:string,type:string}|null>(null);
 
-  dateFrom = new Date(new Date().getFullYear(), 0, 1).toISOString().slice(0,10);
-  dateTo   = new Date().toISOString().slice(0,10);
+  dateFrom = (() => { const d = new Date(new Date().getFullYear(), 0, 1); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
+  dateTo   = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
   search = ''; fStatus = ''; fSeverity = ''; fPriority = ''; fType = ''; fLevel = '';
   private charts: any[] = [];
   private searchTimer: any;
@@ -733,6 +792,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
     { key:'sla',        en:'SLA Compliance',     ar:'امتثال SLA',         icon:'fas fa-file-contract' },
     { key:'okr',        en:'OKR Progress',       ar:'تقدم الأهداف',       icon:'fas fa-bullseye-arrow' },
     { key:'vendors',    en:'Vendor Performance', ar:'أداء الموردين',      icon:'fas fa-truck-ramp-box' },
+    { key:'visits',     en:'Visit Summary',      ar:'ملخص الزيارات',      icon:'fas fa-building-user' },
   ];
   recordTabs = [
     { key:'rec_complaints', en:'All Complaints',  ar:'جميع الشكاوى',       icon:'fas fa-list-check' },
@@ -741,6 +801,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
     { key:'rec_risks',      en:'All Risks',       ar:'جميع المخاطر',       icon:'fas fa-list-check' },
     { key:'rec_audits',     en:'All Audits',      ar:'جميع التدقيق',       icon:'fas fa-list-check' },
     { key:'rec_requests',   en:'All Requests',    ar:'جميع الطلبات',       icon:'fas fa-list-check' },
+    { key:'rec_visits',     en:'All Visits',      ar:'جميع الزيارات',      icon:'fas fa-list-check' },
   ];
 
   isRecordTab() { return this.activeTab().startsWith('rec_'); }
@@ -755,18 +816,24 @@ export class ReportsComponent implements OnInit, OnDestroy {
 
   switchTab(t: string) {
     this.killCharts(); this.activeTab.set(t as Tab);
-    this.fStatus=''; this.fSeverity=''; this.fPriority=''; this.fType=''; this.fLevel=''; this.search='';
+    this.fStatus=''; this.fSeverity=''; this.fPriority=''; this.fType=''; this.fLevel=''; this.search=''; this.recPage.set(1); this.recSummaryData.set(null);
     this.reload();
   }
 
   reload() {
+    // Validate date range
+    if (this.dateFrom && this.dateTo && this.dateFrom > this.dateTo) {
+      this.showToast('Start date must be before end date', 'error');
+      return;
+    }
     this.killCharts(); this.loading.set(true);
     if (this.isRecordTab()) { this.loadRecords(); return; }
     const epMap: Partial<Record<Tab,string>> = {
       kpi:'/reports/kpi-summary', nc:'/reports/nc-trend', capa:'/reports/capa-effectiveness',
       risk:'/reports/risk-heat-map', complaints:'/reports/complaint-trend',
       audits:'/reports/audit-summary', sla:'/reports/sla-compliance',
-      okr:'/reports/okr-progress', vendors:'/reports/vendor-performance'
+      okr:'/reports/okr-progress', vendors:'/reports/vendor-performance',
+      visits:'/reports/visit-summary'
     };
     this.api.get<any>(epMap[this.activeTab()]!, { from:this.dateFrom, to:this.dateTo }).subscribe({
       next: d => { this.data.set(d); this.loading.set(false); setTimeout(() => this.buildCharts(), 160); },
@@ -778,7 +845,8 @@ export class ReportsComponent implements OnInit, OnDestroy {
     const recMap: Partial<Record<Tab,string>> = {
       rec_complaints:'/reports/records/complaints', rec_ncs:'/reports/records/ncs',
       rec_capas:'/reports/records/capas', rec_risks:'/reports/records/risks',
-      rec_audits:'/reports/records/audits', rec_requests:'/reports/records/requests'
+      rec_audits:'/reports/records/audits', rec_requests:'/reports/records/requests',
+      rec_visits:'/reports/records/visits'
     };
     const params: any = { from:this.dateFrom, to:this.dateTo };
     if (this.fStatus)   params['status']   = this.fStatus;
@@ -787,11 +855,14 @@ export class ReportsComponent implements OnInit, OnDestroy {
     if (this.fType)     params['type']     = this.fType;
     if (this.fLevel)    params['level']    = this.fLevel;
     if (this.search)    params['search']   = this.search;
+    params['page'] = this.recPage();
     this.api.get<any>(recMap[this.activeTab()]!, params).subscribe({
       next: d => {
         this.recRows.set(d.data || []);
         this.recTotal.set(d.total || 0);
+        this.recLastPage.set(d.last_page || 1);
         if (d.filters) this.recFilters.set(d.filters);
+        if (d.summary) this.recSummaryData.set(d.summary);
         this.loading.set(false);
       },
       error: () => this.loading.set(false)
@@ -801,54 +872,69 @@ export class ReportsComponent implements OnInit, OnDestroy {
   recSummary() {
     const r = this.recRows(), a = this.activeTab();
     if (!r.length) return [];
+    // Use backend summary totals (accurate across full dataset, not just current page)
+    const s = this.recSummaryData();
     if (a==='rec_complaints') return [
-      {label:'Total',value:this.recTotal(),cls:''},
-      {label:'Critical',value:r.filter(x=>x.severity==='critical').length,cls:'chip-red'},
-      {label:'Open',value:r.filter(x=>!['resolved','closed'].includes(x.status)).length,cls:'chip-warn'},
-      {label:'Resolved',value:r.filter(x=>['resolved','closed'].includes(x.status)).length,cls:'chip-grn'},
+      {label:'Total',    value:s?.total    ?? this.recTotal(), cls:''},
+      {label:'Critical', value:s?.critical ?? 0,              cls:'chip-red'},
+      {label:'Open',     value:s?.open     ?? 0,              cls:'chip-warn'},
+      {label:'Resolved', value:s?.resolved ?? 0,              cls:'chip-grn'},
     ];
     if (a==='rec_ncs') return [
-      {label:'Total',value:this.recTotal(),cls:''},
-      {label:'Critical',value:r.filter(x=>x.severity==='critical').length,cls:'chip-red'},
-      {label:'Open',value:r.filter(x=>x.status==='open').length,cls:'chip-warn'},
-      {label:'Closed',value:r.filter(x=>x.status==='closed').length,cls:'chip-grn'},
+      {label:'Total',    value:s?.total    ?? this.recTotal(), cls:''},
+      {label:'Critical', value:s?.critical ?? 0,              cls:'chip-red'},
+      {label:'Open',     value:s?.open     ?? 0,              cls:'chip-warn'},
+      {label:'Closed',   value:s?.closed   ?? 0,              cls:'chip-grn'},
     ];
     if (a==='rec_capas') return [
-      {label:'Total',value:this.recTotal(),cls:''},
-      {label:'Overdue',value:r.filter(x=>x.is_overdue).length,cls:'chip-red'},
-      {label:'Open',value:r.filter(x=>x.status!=='closed').length,cls:'chip-warn'},
-      {label:'Closed',value:r.filter(x=>x.status==='closed').length,cls:'chip-grn'},
+      {label:'Total',   value:s?.total   ?? this.recTotal(), cls:''},
+      {label:'Overdue', value:s?.overdue ?? 0,               cls:'chip-red'},
+      {label:'Open',    value:s?.open    ?? 0,               cls:'chip-warn'},
+      {label:'Closed',  value:s?.closed  ?? 0,               cls:'chip-grn'},
     ];
     if (a==='rec_risks') return [
-      {label:'Total',value:this.recTotal(),cls:''},
-      {label:'Critical',value:r.filter(x=>x.risk_level==='critical').length,cls:'chip-red'},
-      {label:'High',value:r.filter(x=>x.risk_level==='high').length,cls:'chip-warn'},
-      {label:'Low/Med',value:r.filter(x=>['low','medium'].includes(x.risk_level)).length,cls:'chip-grn'},
+      {label:'Total',    value:s?.total    ?? this.recTotal(), cls:''},
+      {label:'Critical', value:s?.critical ?? 0,              cls:'chip-red'},
+      {label:'High',     value:s?.high     ?? 0,              cls:'chip-warn'},
+      {label:'Low/Med',  value:s?.low_med  ?? 0,              cls:'chip-grn'},
     ];
     if (a==='rec_audits') return [
-      {label:'Total',value:this.recTotal(),cls:''},
-      {label:'Completed',value:r.filter(x=>x.status==='completed').length,cls:'chip-grn'},
-      {label:'In Progress',value:r.filter(x=>x.status==='in_progress').length,cls:'chip-blue'},
-      {label:'Open Findings',value:r.reduce((s:number,x:any)=>s+x.open_findings,0),cls:'chip-red'},
+      {label:'Total',         value:s?.total         ?? this.recTotal(), cls:''},
+      {label:'Completed',     value:s?.completed     ?? 0,               cls:'chip-grn'},
+      {label:'In Progress',   value:s?.in_progress   ?? 0,               cls:'chip-blue'},
+      {label:'Open Findings', value:s?.open_findings ?? 0,               cls:'chip-red'},
+    ];
+    if (a==='rec_visits') return [
+      {label:'Total',     value:s?.total     ?? this.recTotal(), cls:''},
+      {label:'Completed', value:s?.completed ?? 0,               cls:'chip-grn'},
+      {label:'Cancelled', value:s?.cancelled ?? 0,               cls:'chip-red'},
+      {label:'Virtual',   value:s?.virtual   ?? 0,               cls:'chip-blue'},
     ];
     if (a==='rec_requests') return [
-      {label:'Total',value:this.recTotal(),cls:''},
-      {label:'Overdue',value:r.filter(x=>x.is_overdue).length,cls:'chip-red'},
-      {label:'Open',value:r.filter(x=>!['closed','approved','rejected'].includes(x.status)).length,cls:'chip-warn'},
-      {label:'Closed',value:r.filter(x=>x.status==='closed').length,cls:'chip-grn'},
+      {label:'Total',   value:s?.total   ?? this.recTotal(), cls:''},
+      {label:'Overdue', value:s?.overdue ?? 0,               cls:'chip-red'},
+      {label:'Open',    value:s?.open    ?? 0,               cls:'chip-warn'},
+      {label:'Closed',  value:s?.closed  ?? 0,               cls:'chip-grn'},
     ];
     return [];
   }
 
   onSearch() { clearTimeout(this.searchTimer); this.searchTimer = setTimeout(() => this.loadRecords(), 400); }
+  prevRecPage() { if (this.recPage() > 1) { this.recPage.update(p => p - 1); this.loadRecords(); } }
+  nextRecPage() { if (this.recPage() < this.recLastPage()) { this.recPage.update(p => p + 1); this.loadRecords(); } }
   clearSearch()  { this.search=''; this.loadRecords(); }
-  clearFilters() { this.fStatus='';this.fSeverity='';this.fPriority='';this.fType='';this.fLevel='';this.search=''; this.reload(); }
+  clearFilters() { this.fStatus='';this.fSeverity='';this.fPriority='';this.fType='';this.fLevel='';this.search=''; this.recPage.set(1); this.reload(); }
 
   /* ── Charts ── */
   killCharts() { this.charts.forEach(c=>{try{c.destroy();}catch{}}); this.charts=[]; }
 
   buildCharts() {
-    const C = (window as any).Chart; if (!C) return;
+    const C = (window as any).Chart;
+    if (!C) {
+      // Chart.js not available as window global — show a hint once
+      console.warn('[QMS Reports] Chart.js not found on window. Charts require Chart.js loaded via CDN.');
+      return;
+    }
     const t = this.activeTab(), d = this.data(); if (!d) return;
     if (t==='kpi')        this.buildKpi(d,C);
     if (t==='nc')         this.buildNc(d,C);
@@ -858,13 +944,18 @@ export class ReportsComponent implements OnInit, OnDestroy {
     if (t==='audits')     this.buildAudit(d,C);
     if (t==='okr')        this.buildOkr(d,C);
     if (t==='vendors')    this.buildVendor(d,C);
+    if (t==='visits')     this.buildVisit(d,C);
   }
 
   buildKpi(d:any,C:any) {
     const kpis=d.kpis||[]; if (!kpis.length) return;
     const el=document.getElementById('kpiRadar') as HTMLCanvasElement; if(!el) return;
     const labels=kpis.map((k:any)=>k.label.replace(' Rate','').replace(' Compliance','').replace(' Hours',''));
-    const vals=kpis.map((k:any)=>k.unit==='h'?Math.max(0,100-(k.value||0)):k.value??0);
+    // For hours KPI: score = 100 when value=0, 100 at target, 0 at 2× target
+    // Formula: Math.max(0, 100 - Math.max(0, value - target) / target * 100)
+    const vals=kpis.map((k:any)=>k.unit==='h'
+      ? (k.value == null ? 0 : Math.max(0, Math.round(100 - Math.max(0, k.value - k.target) / k.target * 100)))
+      : (k.value ?? 0));
     const tgts=kpis.map((k:any)=>k.unit==='h'?100:k.target);
     this.charts.push(new C(el,{type:'radar',data:{labels,datasets:[
       {label:'Actual',data:vals,borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.12)',pointBackgroundColor:'#3b82f6',pointRadius:3,tension:.3},
@@ -890,7 +981,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
   }
   buildComp(d:any,C:any) {
     this.mkLine('compTrend',d.monthly||[],'month',[{key:'received',label:'Received',col:'#ef4444'},{key:'resolved',label:'Resolved',col:'#10b981'}],C);
-    this.mkDonut('compSev','compSevL',d.by_severity||[],'severity',{critical:'#ef4444',major:'#f59e0b',minor:'#10b981'},C);
+    this.mkDonut('compSev','compSevL',d.by_severity||[],'severity',{critical:'#ef4444',high:'#f97316',medium:'#f59e0b',low:'#10b981'},C);
     this.mkDonut('compSrc','compSrcL',d.by_source||[],'source',{email:'#3b82f6',phone:'#10b981',portal:'#6366f1',walk_in:'#f59e0b',regulator:'#ef4444'},C);
   }
   buildAudit(d:any,C:any) {
@@ -909,6 +1000,13 @@ export class ReportsComponent implements OnInit, OnDestroy {
     this.mkDonut('vQual','vQualL',d.by_qualification||[],'qualification_status',{qualified:'#10b981',provisional:'#f59e0b',disqualified:'#ef4444',pending:'#6b7280'},C);
   }
 
+  buildVisit(d:any,C:any) {
+    this.mkLine('visitTrend',d.monthly||[],'month',[{key:'scheduled',label:'Scheduled',col:'#6366f1'},{key:'completed',label:'Completed',col:'#10b981'}],C);
+    this.mkDonut('visitType','visitTypeL',d.by_type||[],'type',{client_visit:'#6366f1',insurer_audit:'#3b82f6',regulatory_inspection:'#ef4444',partnership_review:'#10b981',sales_meeting:'#f59e0b',technical_review:'#0ea5e9'},C);
+    this.mkDonut('visitStatus','visitStatusL',d.by_status||[],'status',{planned:'#6b7280',confirmed:'#3b82f6',in_progress:'#f59e0b',completed:'#10b981',cancelled:'#ef4444',rescheduled:'#8b5cf6'},C);
+    this.mkDonut('findingType','findingTypeL',d.findings_by_type||[],'finding_type',{positive:'#10b981',concern:'#f59e0b',requirement:'#3b82f6',action_item:'#ef4444',observation:'#6b7280'},C);
+    this.mkHBar('visitClient',d.by_client||[],'name',['#6366f1','#3b82f6','#0ea5e9','#10b981','#f59e0b','#ef4444','#8b5cf6'],C);
+  }
   mkLine(id:string,rows:any[],lk:string,ds:any[],C:any) {
     const el=document.getElementById(id) as HTMLCanvasElement; if(!el||!rows.length) return;
     this.charts.push(new C(el,{type:'line',
@@ -950,14 +1048,14 @@ export class ReportsComponent implements OnInit, OnDestroy {
       const cols=this.getRecCols();
       rows=[cols.map(c=>c.l),...r.map((row:any)=>cols.map(c=>String(row[c.k]??'')))];
     } else {
-      rows=[['Report',this.activeLabel('en')],['Period',`${this.dateFrom} → ${this.dateTo}`]];
+      rows=this.analyticsToRows(d);
     }
     const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
     const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
     a.download=`QMS_${this.activeTab()}_${this.dateFrom}.csv`; a.click();
   }
   exportExcel() {
-    const XLSX=(window as any).XLSX; if(!XLSX){alert('XLSX not loaded');return;}
+    const XLSX=(window as any).XLSX; if(!XLSX){ this.showToast('Export library not loaded', 'error'); return; }
     const r=this.recRows();
     let data:any[][]=[];
     if (this.isRecordTab() && r.length) {
@@ -965,14 +1063,14 @@ export class ReportsComponent implements OnInit, OnDestroy {
       data=[cols.map(c=>c.l),...r.map((row:any)=>cols.map(c=>row[c.k]??''))];
     } else {
       const d=this.data(); if (!d) return;
-      data=[['Report',this.activeLabel('en')],['Period',`${this.dateFrom} → ${this.dateTo}`]];
+      data=this.analyticsToRows(d);
     }
     const wb=XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(data),this.activeTab().substring(0,31));
     XLSX.writeFile(wb,`QMS_${this.activeTab()}_${this.dateFrom}.xlsx`);
   }
   exportPDF() {
-    const jsPDF=(window as any).jspdf?.jsPDF; if(!jsPDF){alert('jsPDF not loaded');return;}
+    const jsPDF=(window as any).jspdf?.jsPDF; if(!jsPDF){ this.showToast('Export library not loaded', 'error'); return; }
     const r=this.recRows(); if(!r.length && this.isRecordTab()) return;
     const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
     doc.setFillColor(10,11,14); doc.rect(0,0,300,20,'F');
@@ -980,13 +1078,140 @@ export class ReportsComponent implements OnInit, OnDestroy {
     doc.text(`QMS Pro — ${this.activeLabel('en')}`,14,11);
     doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(139,147,168);
     doc.text(`Period: ${this.dateFrom} → ${this.dateTo}  |  Total: ${r.length||'—'} records  |  ${new Date().toLocaleString()}`,14,17);
+    const pdfRows = this.isRecordTab()
+      ? (r.length ? this.getRecCols().map(c=>c.l) && r.map((row:any)=>this.getRecCols().map((c:any)=>String(row[c.k]??''))) : null)
+      : null;
+    const analytRows = !this.isRecordTab() ? this.analyticsToRows(this.data()) : null;
     if (this.isRecordTab() && r.length) {
       const cols=this.getRecCols();
       (doc as any).autoTable({head:[cols.map(c=>c.l)],body:r.map((row:any)=>cols.map((c:any)=>String(row[c.k]??''))),startY:24,margin:{left:8,right:8},
         styles:{fontSize:7,cellPadding:2,textColor:[200,205,215],fillColor:[17,19,24],lineColor:[30,35,48],lineWidth:.2},
         headStyles:{fillColor:[24,28,36],textColor:[139,147,168],fontStyle:'bold'},alternateRowStyles:{fillColor:[14,15,18]}});
+    } else if (analytRows && analytRows.length > 1) {
+      const [head, ...body] = analytRows;
+      (doc as any).autoTable({head:[head],body,startY:24,margin:{left:8,right:8},
+        styles:{fontSize:8,cellPadding:2.5,textColor:[200,205,215],fillColor:[17,19,24],lineColor:[30,35,48],lineWidth:.2},
+        headStyles:{fillColor:[24,28,36],textColor:[139,147,168],fontStyle:'bold'},alternateRowStyles:{fillColor:[14,15,18]}});
     }
     doc.save(`QMS_${this.activeTab()}_${this.dateFrom}.pdf`);
+  }
+
+
+  /** Serialise current analytics data() into a 2D array for CSV/Excel/PDF export */
+  analyticsToRows(d: any): string[][] {
+    const tab = this.activeTab();
+    const header = ['Report', this.activeLabel('en'), '', 'Period', `${this.dateFrom} → ${this.dateTo}`];
+    if (!d) return [header];
+
+    if (tab === 'kpi') {
+      const rows: string[][] = [header, [], ['KPI', 'Value', 'Target', 'Unit', 'Status']];
+      (d.kpis || []).forEach((k: any) => {
+        rows.push([k.label, k.value != null ? String(k.value) : 'N/A',
+                   String(k.target), k.unit, this.kpiStLbl(k)]);
+      });
+      return rows;
+    }
+    if (tab === 'nc') {
+      const rows: string[][] = [header, [],
+        ['Month', 'Raised', 'Closed'],
+        ...(d.monthly || []).map((m: any) => [m.month, String(m.raised || 0), String(m.closed || 0)]),
+        [], ['Severity', 'Count'],
+        ...(d.by_severity || []).map((x: any) => [x.severity, String(x.total)]),
+        [], ['Source', 'Count'],
+        ...(d.by_source || []).map((x: any) => [x.source, String(x.total)]),
+      ];
+      return rows;
+    }
+    if (tab === 'capa') {
+      const s = d.summary || {};
+      const rows: string[][] = [header, [],
+        ['Total', String(s.total || 0)], ['Open', String(s.open || 0)],
+        ['Closed', String(s.closed || 0)], ['Overdue', String(s.overdue || 0)],
+        ['On-Time Rate', `${s.on_time_rate || 0}%`], ['Avg Days to Close', String(d.avg_days_to_close || '—')],
+        [], ['Month', 'Opened', 'Closed'],
+        ...(d.monthly || []).map((m: any) => [m.month, String(m.opened || 0), String(m.closed || 0)]),
+      ];
+      return rows;
+    }
+    if (tab === 'risk') {
+      const rows: string[][] = [header, [],
+        ['Ref', 'Title', 'Level', 'Likelihood', 'Impact', 'Score', 'Treatment', 'Owner', 'Status'],
+        ...(d.top_risks || []).map((r: any) => [
+          r.reference_no, r.title, r.risk_level,
+          String(r.likelihood), String(r.impact), String(r.score),
+          r.treatment_strategy || '—', r.owner || '—', r.status || '—'
+        ]),
+      ];
+      return rows;
+    }
+    if (tab === 'complaints') {
+      const rows: string[][] = [header, [],
+        ['Avg Resolution (h)', String(d.avg_resolution_h || '—')],
+        ['Avg Satisfaction', String(d.avg_satisfaction || '—')],
+        [], ['Month', 'Received', 'Resolved'],
+        ...(d.monthly || []).map((m: any) => [m.month, String(m.received || 0), String(m.resolved || 0)]),
+        [], ['Top Clients', 'Complaints'],
+        ...(d.top_clients || []).map((c: any) => [c.name, String(c.total)]),
+      ];
+      return rows;
+    }
+    if (tab === 'audits') {
+      const rows: string[][] = [header, [],
+        ['Completion Rate', `${d.completion_rate || 0}%`],
+        ['Total Findings', String(d.findings?.total || 0)],
+        ['Open Findings', String(d.findings?.open || 0)],
+        [], ['Ref', 'Title', 'Type', 'Status', 'Planned Start', 'Lead Auditor', 'Findings'],
+        ...(d.recent || []).map((a: any) => [
+          a.reference_no, a.title, a.type, a.status,
+          a.planned_start_date, a.lead_auditor || '—', String(a.findings_count || 0)
+        ]),
+      ];
+      return rows;
+    }
+    if (tab === 'sla') {
+      const rows: string[][] = [header, [],
+        ['Overall Rate', `${d.overall_rate ?? 'N/A'}%`],
+        ['Active SLAs', String(d.total_active || 0)],
+        ['Breaches (30d)', String(d.breaches_30d || 0)],
+        [], ['SLA Name', 'Client', 'Dept', 'Compliance %', 'Met', 'Warning', 'Breached', 'Status'],
+        ...(d.slas || []).map((s: any) => [
+          s.name, s.client || '—', s.department || '—',
+          s.compliance_rate != null ? `${s.compliance_rate}%` : 'No Data',
+          String(s.met || 0), String(s.warning || 0), String(s.breached || 0), s.status
+        ]),
+      ];
+      return rows;
+    }
+    if (tab === 'okr') {
+      const sum = d.summary || {};
+      const rows: string[][] = [header, [],
+        ['Total', String(sum.total || 0)], ['Avg Progress', `${sum.avg_progress || 0}%`],
+        ['On Track', String(sum.on_track || 0)], ['At Risk', String(sum.at_risk || 0)],
+        ['Behind', String(sum.behind || 0)], ['Completed', String(sum.completed || 0)],
+        [], ['Title', 'Type', 'Owner', 'Department', 'Progress %', 'Status', 'KRs'],
+        ...(d.objectives || []).map((o: any) => [
+          o.title, o.type, o.owner || '—', o.department || '—',
+          `${o.progress_percent || 0}%`, o.status, `${o.key_results_done}/${o.key_results_count}`
+        ]),
+      ];
+      return rows;
+    }
+    if (tab === 'vendors') {
+      const cs = d.contract_summary || {};
+      const rows: string[][] = [header, [],
+        ['Active Contracts', String(cs.active || 0)],
+        ['Expiring (60d)', String(cs.expiring || 0)],
+        ['Total Value', String(cs.total_value || 0)],
+        [], ['Vendor', 'Category', 'Status', 'Qualification', 'Avg Score', 'Evaluations', 'Active Contracts'],
+        ...(d.vendors || []).map((v: any) => [
+          v.name, v.category || '—', v.status, v.qualification_status,
+          v.avg_eval_score != null ? String(v.avg_eval_score) : '—',
+          String(v.eval_count || 0), String(v.active_contracts || 0)
+        ]),
+      ];
+      return rows;
+    }
+    return [header];
   }
 
   getRecCols():{l:string;k:string}[] {
@@ -997,6 +1222,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
       rec_risks:[{l:'Ref',k:'reference_no'},{l:'Title',k:'title'},{l:'Level',k:'risk_level'},{l:'Likelihood',k:'likelihood'},{l:'Impact',k:'impact'},{l:'Score',k:'score'},{l:'Status',k:'status'},{l:'Category',k:'category'},{l:'Treatment',k:'treatment_strategy'},{l:'Owner',k:'owner'}],
       rec_audits:[{l:'Ref',k:'reference_no'},{l:'Title',k:'title'},{l:'Type',k:'type'},{l:'Status',k:'status'},{l:'Result',k:'overall_result'},{l:'Lead Auditor',k:'lead_auditor'},{l:'Department',k:'department'},{l:'Planned Start',k:'planned_start_date'},{l:'Findings',k:'findings_count'},{l:'Open Findings',k:'open_findings'}],
       rec_requests:[{l:'Ref',k:'reference_no'},{l:'Title',k:'title'},{l:'Type',k:'type'},{l:'Priority',k:'priority'},{l:'Status',k:'status'},{l:'Requester',k:'requester'},{l:'Assignee',k:'assignee'},{l:'Department',k:'department'},{l:'Due Date',k:'due_date'},{l:'Closed',k:'closed_at'},{l:'Overdue',k:'is_overdue'}],
+      rec_visits:[{l:'Ref',k:'reference_no'},{l:'Client',k:'client'},{l:'Type',k:'type'},{l:'Status',k:'status'},{l:'Date',k:'visit_date'},{l:'Host',k:'host'},{l:'Location',k:'location'},{l:'Duration',k:'duration_hours'},{l:'Virtual',k:'is_virtual'},{l:'Rating',k:'rating'},{l:'Follow-Up',k:'follow_up_date'},{l:'Findings',k:'findings_count'},{l:'Open Findings',k:'open_findings'}],
     };
     return m[this.activeTab()]||[];
   }
@@ -1043,5 +1269,13 @@ export class ReportsComponent implements OnInit, OnDestroy {
   qualCls(s:string):string { return ({qualified:'badge-green',provisional:'badge-yellow',disqualified:'badge-red',pending:'badge-draft'} as any)[s]||'badge-draft'; }
   compStCls(s:string):string { return ({open:'badge-red',in_progress:'badge-yellow',resolved:'badge-green',closed:'badge-draft',withdrawn:'badge-draft'} as any)[s]||'badge-draft'; }
   reqStCls(s:string):string  { return ({draft:'badge-draft',submitted:'badge-blue',under_review:'badge-yellow',approved:'badge-green',rejected:'badge-red',closed:'badge-green'} as any)[s]||'badge-draft'; }
+  fmtSlug(s: string|null|undefined): string { return (s ?? '').replace(/_/g, ' '); }
+  visitStCls(s:string):string { return ({planned:'badge-draft',confirmed:'badge-blue',in_progress:'badge-yellow',completed:'badge-green',cancelled:'badge-red',rescheduled:'badge-purple'} as any)[s]||'badge-draft'; }
+  ratingStars(r:number):string { const n=Math.min(5,Math.max(0,Math.round(r))); return '★'.repeat(n)+'☆'.repeat(5-n); }
   isOv(date:string,status:string):boolean { if(!date||['closed','resolved','approved'].includes(status)) return false; return new Date(date)<new Date(); }
+  showToast(msg: string, type: string): void {
+    this.toast.set({ msg, type });
+    setTimeout(() => this.toast.set(null), 3500);
+  }
+
 }

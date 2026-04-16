@@ -50,17 +50,36 @@ import { AuthService } from '../../../core/services/auth.service';
     <i class="fas fa-user-gear"></i>
     <div>
       <strong>QA Manager View:</strong>
-      Requests approved by Department Managers are <strong>automatically assigned to you</strong>.
+      Quality requests approved by Department Managers are <strong>automatically assigned to you</strong>.
       Review them in your <strong>QA Inbox</strong> and assign each one to a QA Officer or Specialist to process.
     </div>
   </div>
 }
-@if (isQAOfficer()) {
+@if (isQAOfficer() && !isComplianceMgr()) {
   <div class="workflow-banner officer-banner">
     <i class="fas fa-clipboard-check"></i>
     <div>
       <strong>QA Officer View:</strong>
-      Process requests assigned to you. Close each request with a resolution summary.
+      Process Quality requests assigned to you. Close each request with a resolution summary.
+    </div>
+  </div>
+}
+@if (isComplianceMgr()) {
+  <div class="workflow-banner" style="background:rgba(139,92,246,.08);border-left:3px solid #a78bfa">
+    <i class="fas fa-scale-balanced" style="color:#a78bfa"></i>
+    <div>
+      <strong>Compliance Manager View:</strong>
+      Compliance requests approved by Department Managers are <strong>automatically routed to you</strong>.
+      Review your <strong>Compliance Inbox</strong> and assign each request to a Compliance Officer to action.
+    </div>
+  </div>
+}
+@if (isComplianceOfc()) {
+  <div class="workflow-banner" style="background:rgba(139,92,246,.06);border-left:3px solid rgba(139,92,246,.4)">
+    <i class="fas fa-user-lock" style="color:#a78bfa"></i>
+    <div>
+      <strong>Compliance Officer View:</strong>
+      Process compliance requests assigned to you. Close each with a resolution and findings summary.
     </div>
   </div>
 }
@@ -131,7 +150,7 @@ import { AuthService } from '../../../core/services/auth.service';
           <th>STATUS</th>
           <th>SUBMITTED BY</th>
           @if (!isEmployee()) { <th>DEPARTMENT</th> }
-          @if (isQAManager() || isQAOfficer()) { <th>ASSIGNED TO</th> }
+          @if (isQAManager() || isQAOfficer() || isCompliance()) { <th>ASSIGNED TO</th> }
           <th>DUE DATE</th>
         </tr>
       </thead>
@@ -146,9 +165,15 @@ import { AuthService } from '../../../core/services/auth.service';
             <td><span class="mono-ref">{{ r.reference_no }}</span></td>
             <td style="max-width:220px">
               <div class="text-truncate font-medium">{{ r.title }}</div>
-              @if (r.description) {
-                <div style="font-size:11px;color:var(--text2);margin-top:1px" class="text-truncate">{{ r.description | slice:0:60 }}</div>
-              }
+              <div style="display:flex;align-items:center;gap:5px;margin-top:3px">
+                <span class="dept-pill" [class]="r.target_department==='compliance' ? 'dept-pill--purple' : 'dept-pill--blue'">
+                  <i [class]="r.target_department==='compliance' ? 'fas fa-scale-balanced' : 'fas fa-award'"></i>
+                  {{ r.target_department==='compliance' ? 'Compliance' : 'Quality' }}
+                </span>
+                @if (r.description) {
+                  <span style="font-size:11px;color:var(--text2)" class="text-truncate">{{ r.description | slice:0:50 }}</span>
+                }
+              </div>
             </td>
             <td style="font-size:12px;color:var(--text2)">{{ r.category?.name || '—' }}</td>
             <td><span class="badge" [class]="priorityClass(r.priority)">{{ r.priority }}</span></td>
@@ -209,6 +234,36 @@ import { AuthService } from '../../../core/services/auth.service';
         <button class="icon-btn modal-close" (click)="showForm=false"><i class="fas fa-times"></i></button>
       </div>
       <div class="modal-body">
+
+        <!-- ── Send To selector ── -->
+        <div class="form-group" style="margin-bottom:16px">
+          <label class="form-label" style="margin-bottom:8px">Send To <span style="color:#ef4444">*</span></label>
+          <div class="dest-row">
+            <button type="button" class="dest-btn" [class.dest-btn--active]="form.target_department==='quality'"
+              (click)="form.target_department='quality'">
+              <div class="dest-btn-icon dest-btn-icon--blue"><i class="fas fa-award"></i></div>
+              <div>
+                <div class="dest-btn-title">Quality Department</div>
+                <div class="dest-btn-sub">NC/CAPA · Audits · Documents · Improvement</div>
+              </div>
+              <div class="dest-btn-check" [class.on]="form.target_department==='quality'">
+                <i class="fas fa-check"></i>
+              </div>
+            </button>
+            <button type="button" class="dest-btn" [class.dest-btn--active]="form.target_department==='compliance'"
+              (click)="form.target_department='compliance'">
+              <div class="dest-btn-icon dest-btn-icon--purple"><i class="fas fa-scale-balanced"></i></div>
+              <div>
+                <div class="dest-btn-title">Compliance Department</div>
+                <div class="dest-btn-sub">Regulatory · Risk · Policy · Complaints</div>
+              </div>
+              <div class="dest-btn-check" [class.on]="form.target_department==='compliance'">
+                <i class="fas fa-check"></i>
+              </div>
+            </button>
+          </div>
+        </div>
+
         <div class="form-grid">
           <div class="form-group fg-full">
             <label class="form-label">Title *</label>
@@ -247,17 +302,17 @@ import { AuthService } from '../../../core/services/auth.service';
           <div class="form-group fg-full">
             <label class="form-label">Description *</label>
             <textarea class="form-control" rows="4" [(ngModel)]="form.description"
-              placeholder="Describe your request in detail. Include any relevant context, impact, or supporting information…"></textarea>
+              placeholder="Describe your request in detail…"></textarea>
           </div>
         </div>
 
-        <!-- Info note for employees -->
-        @if (isEmployee()) {
-          <div class="info-note">
-            <i class="fas fa-circle-info"></i>
-            Your request will be reviewed by your <strong>Department Manager</strong> before being forwarded to the Quality Department.
-          </div>
-        }
+        <!-- Dynamic routing note -->
+        <div class="info-note" [style.border-color]="form.target_department==='compliance' ? 'rgba(139,92,246,.3)' : 'rgba(59,130,246,.2)'"
+             [style.background]="form.target_department==='compliance' ? 'rgba(139,92,246,.06)' : 'rgba(59,130,246,.06)'">
+          <i class="fas fa-route" [style.color]="form.target_department==='compliance' ? '#a78bfa' : 'var(--accent)'"></i>
+          Your request will go to your <strong>Department Manager</strong> for approval, then forwarded to the
+          <strong>{{ form.target_department === 'compliance' ? 'Compliance Manager' : 'QA Manager' }}</strong>.
+        </div>
 
         @if (formError()) {
           <div class="alert-error" style="margin-top:8px">{{ formError() }}</div>
@@ -363,12 +418,12 @@ import { AuthService } from '../../../core/services/auth.service';
                   <div class="journey-line" [class.done]="stepDone('approved')"></div>
                   <div class="journey-step" [class.done]="stepDone('approved')" [class.active]="stepActive('approved')">
                     <div class="journey-dot"><i class="fas fa-inbox"></i></div>
-                    <div class="journey-label">QA Manager</div>
+                    <div class="journey-label">{{ detail()!.target_department === 'compliance' ? 'Compliance Mgr' : 'QA Manager' }}</div>
                   </div>
                   <div class="journey-line" [class.done]="stepDone('in_progress')"></div>
                   <div class="journey-step" [class.done]="stepDone('in_progress')" [class.active]="stepActive('in_progress')">
                     <div class="journey-dot"><i class="fas fa-user-gear"></i></div>
-                    <div class="journey-label">QA Processing</div>
+                    <div class="journey-label">{{ detail()!.target_department === 'compliance' ? 'Compliance' : 'QA' }} Processing</div>
                   </div>
                   <div class="journey-line" [class.done]="stepDone('closed')"></div>
                   <div class="journey-step" [class.done]="stepDone('closed')" [class.active]="stepActive('closed')">
@@ -429,7 +484,8 @@ import { AuthService } from '../../../core/services/auth.service';
                   <div class="action-card-title"><i class="fas fa-inbox"></i> With QA Manager</div>
                   <p class="action-card-desc">
                     Your request was approved by your Department Manager and is now assigned to the
-                    <strong>QA Manager ({{ detail()!.assignee?.name }})</strong> for review and assignment.
+                    <strong>{{ detail()!.target_department === 'compliance' ? 'Compliance Manager' : 'QA Manager' }}
+                    ({{ detail()!.assignee?.name }})</strong> for review and action.
                   </p>
                 </div>
               }
@@ -457,14 +513,14 @@ import { AuthService } from '../../../core/services/auth.service';
             @if (isDeptManager() && detail()!.status === 'submitted') {
               <div class="action-card action-card-green">
                 <div class="action-card-title"><i class="fas fa-stamp"></i> Approve Request</div>
-                <p class="action-card-desc">Approving will forward this request to the Quality Department for processing.</p>
+                <p class="action-card-desc">Approving will forward this request to the <strong>{{ detail()!.target_department === 'compliance' ? 'Compliance Department' : 'Quality Department' }}</strong> for processing.</p>
                 <div class="form-group" style="margin-bottom:8px">
                   <textarea class="form-control" rows="2" [(ngModel)]="approveComment"
                     placeholder="Approval comments (optional)…"></textarea>
                 </div>
                 <button class="btn btn-sm" style="background:#10b981;color:#fff"
                   (click)="doApprove()" [disabled]="savingAction()">
-                  <i class="fas fa-check"></i> {{ savingAction() ? 'Processing…' : 'Approve & Forward to QA' }}
+                  <i class="fas fa-check"></i> {{ savingAction() ? 'Processing…' : 'Approve & Forward to ' + (detail()!.target_department === 'compliance' ? 'Compliance' : 'QA') }}
                 </button>
               </div>
 
@@ -490,7 +546,7 @@ import { AuthService } from '../../../core/services/auth.service';
             }
 
             <!-- QA MANAGER: assign to QA officer -->
-            @if (isQAManager() && detail()!.status === 'approved') {
+            @if (isQAManager() && detail()!.status === 'approved' && detail()!.target_department === 'quality') {
               <div class="action-card action-card-blue">
                 <div class="action-card-title">
                   <i class="fas fa-user-plus"></i> Assign to QA Officer / Specialist
@@ -507,6 +563,30 @@ import { AuthService } from '../../../core/services/auth.service';
                     }
                   </select>
                   <button class="btn btn-primary btn-sm" (click)="doAssign()"
+                    [disabled]="!assigneeId || savingAction()">
+                    <i class="fas fa-user-check"></i> {{ savingAction() ? 'Assigning…' : 'Assign' }}
+                  </button>
+                </div>
+              </div>
+            }
+
+            <!-- COMPLIANCE MANAGER: assign to Compliance Officer -->
+            @if ((isComplianceMgr() || isQAManager()) && detail()!.status === 'approved' && detail()!.target_department === 'compliance') {
+              <div class="action-card" style="border-left:3px solid #a78bfa;background:rgba(139,92,246,.05)">
+                <div class="action-card-title">
+                  <i class="fas fa-user-plus" style="color:#a78bfa"></i> Assign to Compliance Officer
+                </div>
+                <p class="action-card-desc">
+                  This compliance request was approved. Select a Compliance Officer to process it.
+                </p>
+                <div style="display:flex;gap:8px;margin-top:4px">
+                  <select class="form-control" [(ngModel)]="assigneeId" style="flex:1">
+                    <option value="">— Select Compliance Officer —</option>
+                    @for (u of qaUsers(); track u.id) {
+                      <option [value]="u.id">{{ u.name }} @if (u.role?.name) { ({{ u.role.name }}) }</option>
+                    }
+                  </select>
+                  <button class="btn btn-sm" style="background:#a78bfa;color:#fff" (click)="doAssign()"
                     [disabled]="!assigneeId || savingAction()">
                     <i class="fas fa-user-check"></i> {{ savingAction() ? 'Assigning…' : 'Assign' }}
                   </button>
@@ -535,7 +615,7 @@ import { AuthService } from '../../../core/services/auth.service';
             }
 
             <!-- QA OFFICER: close with resolution -->
-            @if (isQAOfficer() && detail()!.assignee_id === currentUserId() && detail()!.status === 'in_progress') {
+            @if (isQAOfficer() && detail()!.assignee_id === currentUserId() && detail()!.status === 'in_progress' && detail()!.target_department === 'quality') {
               <div class="action-card action-card-green">
                 <div class="action-card-title"><i class="fas fa-circle-check"></i> Close Request with Resolution</div>
                 <p class="action-card-desc">Once you have addressed this request, provide a resolution summary and close it.</p>
@@ -544,6 +624,22 @@ import { AuthService } from '../../../core/services/auth.service';
                     placeholder="Describe the resolution, actions taken, and outcome…"></textarea>
                 </div>
                 <button class="btn btn-sm" style="background:#10b981;color:#fff"
+                  (click)="doClose()" [disabled]="!closeResolution.trim() || savingAction()">
+                  <i class="fas fa-circle-check"></i> {{ savingAction() ? 'Closing…' : 'Close Request' }}
+                </button>
+              </div>
+            }
+
+            <!-- COMPLIANCE OFFICER: close compliance request -->
+            @if (isComplianceOfc() && detail()!.assignee_id === currentUserId() && detail()!.status === 'in_progress' && detail()!.target_department === 'compliance') {
+              <div class="action-card" style="border-left:3px solid #a78bfa;background:rgba(139,92,246,.05)">
+                <div class="action-card-title"><i class="fas fa-circle-check" style="color:#a78bfa"></i> Close Compliance Request</div>
+                <p class="action-card-desc">Provide your compliance resolution, findings, and any regulatory actions taken, then close the request.</p>
+                <div class="form-group" style="margin-bottom:8px">
+                  <textarea class="form-control" rows="3" [(ngModel)]="closeResolution"
+                    placeholder="Compliance findings, actions taken, regulatory outcome…"></textarea>
+                </div>
+                <button class="btn btn-sm" style="background:#a78bfa;color:#fff"
                   (click)="doClose()" [disabled]="!closeResolution.trim() || savingAction()">
                   <i class="fas fa-circle-check"></i> {{ savingAction() ? 'Closing…' : 'Close Request' }}
                 </button>
@@ -672,7 +768,7 @@ import { AuthService } from '../../../core/services/auth.service';
     .stats-row{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
     .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;flex:1;min-width:110px;text-align:center;transition:box-shadow .15s}
     .stat-card:hover{box-shadow:0 2px 12px rgba(0,0,0,.08)}
-    .stat-num{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;line-height:1}
+    .stat-num{font-family:'Inter',sans-serif;font-size:28px;font-weight:800;line-height:1}
     .stat-lbl{font-size:11px;color:var(--text2);margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
 
     /* ── Workflow banners ── */
@@ -730,6 +826,25 @@ import { AuthService } from '../../../core/services/auth.service';
     .detail-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.04);font-size:13px}
     .detail-row span:first-child{color:var(--text2)}.detail-row span:last-child{font-weight:500;text-align:right}
     .inline-form-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px}
+
+    /* ── Send-To destination selector (create modal) ── */
+    .dest-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    @media(max-width:580px){.dest-row{grid-template-columns:1fr}}
+    .dest-btn{display:flex;align-items:center;gap:10px;padding:11px 14px;
+      background:var(--bg);border:2px solid var(--border);border-radius:10px;
+      cursor:pointer;text-align:left;transition:all .15s;width:100%}
+    .dest-btn:hover{border-color:var(--border2);background:var(--surface2)}
+    .dest-btn--active{border-color:var(--accent)!important;background:rgba(59,130,246,.05)!important}
+    .dest-btn:has(.dest-btn-icon--purple).dest-btn--active{border-color:#a78bfa!important;background:rgba(139,92,246,.05)!important}
+    .dest-btn-icon{width:34px;height:34px;border-radius:8px;display:grid;place-items:center;font-size:15px;flex-shrink:0}
+    .dest-btn-icon--blue{background:rgba(59,130,246,.14);color:#60a5fa}
+    .dest-btn-icon--purple{background:rgba(139,92,246,.14);color:#a78bfa}
+    .dest-btn-title{font-size:12px;font-weight:700;color:var(--text);margin-bottom:2px}
+    .dest-btn-sub{font-size:10px;color:var(--text2);line-height:1.3}
+    .dest-btn-check{width:18px;height:18px;border-radius:50%;border:2px solid var(--border2);
+      display:grid;place-items:center;flex-shrink:0;font-size:9px;
+      color:transparent;transition:all .15s;margin-left:auto}
+    .dest-btn-check.on{background:var(--accent);border-color:var(--accent);color:#fff}
 
     /* ── Journey steps ── */
     .journey-steps{display:flex;align-items:center;gap:0;padding:8px 0}
@@ -816,27 +931,19 @@ export class RequestsListComponent implements OnInit, OnDestroy {
   private searchTimer: any;
 
   // ── Role computed signals ──────────────────────────
-  // Role helpers — check by slug (most reliable) with permissions fallback
-  isQAManager = computed(() => {
-    const slug  = this.auth.currentUser()?.role?.slug || '';
-    const perms: string[] = this.auth.currentUser()?.role?.permissions || [];
-    return slug === 'super_admin' || slug === 'qa_manager' || perms.includes('*') || perms.some((p:string)=>p==='request.*');
-  });
-  isDeptManager = computed(() => {
-    const slug = this.auth.currentUser()?.role?.slug || '';
-    const perms: string[] = this.auth.currentUser()?.role?.permissions || [];
-    return !this.isQAManager() && (slug === 'dept_manager' || perms.includes('request.approve'));
-  });
-  isQAOfficer = computed(() => {
-    const slug = this.auth.currentUser()?.role?.slug || '';
-    const perms: string[] = this.auth.currentUser()?.role?.permissions || [];
-    return !this.isQAManager() && !this.isDeptManager() && (slug === 'qa_officer' || perms.includes('request.process'));
-  });
-  isEmployee = computed(() => {
-    return !this.isQAManager() && !this.isDeptManager() && !this.isQAOfficer();
-  });
+  private _slug = computed(() => (this.auth.currentUser() as any)?.role?.slug ?? '');
+
+  isQAManager     = computed(() => ['super_admin','qa_manager'].includes(this._slug()));
+  isQASupervisor  = computed(() => this._slug() === 'quality_supervisor');
+  isQAOfficer     = computed(() => ['qa_officer','quality_supervisor'].includes(this._slug()));
+  isDeptManager   = computed(() => this._slug() === 'dept_manager');
+  isComplianceMgr = computed(() => this._slug() === 'compliance_manager');
+  isComplianceOfc = computed(() => this._slug() === 'compliance_officer');
+  isCompliance    = computed(() => ['compliance_manager','compliance_officer'].includes(this._slug()));
+  isEmployee      = computed(() => this._slug() === 'employee');
+
   canCreate = computed(() => {
-    const perms: string[] = this.auth.currentUser()?.role?.permissions || [];
+    const perms: string[] = (this.auth.currentUser() as any)?.role?.permissions || [];
     return perms.includes('*') || perms.includes('request.create') || perms.some((p:string)=>p==='request.*');
   });
 
@@ -855,8 +962,8 @@ export class RequestsListComponent implements OnInit, OnDestroy {
     const d = this.detail();
     if (!d) return 0;
     if (this.isDeptManager() && d.status === 'submitted') return 1;
-    if (this.isQAManager() && d.status === 'approved') return 1;
-    if (this.isQAOfficer() && d.assignee_id === this.currentUserId() && d.status === 'in_progress') return 1;
+    if ((this.isQAManager() || this.isComplianceMgr()) && d.status === 'approved') return 1;
+    if ((this.isQAOfficer() || this.isComplianceOfc()) && d.assignee_id === this.currentUserId() && d.status === 'in_progress') return 1;
     return 0;
   });
 
@@ -872,9 +979,11 @@ export class RequestsListComponent implements OnInit, OnDestroy {
   ];
 
   visibleTabs = computed(() => {
-    if (this.isQAManager()) return this.allTabs.filter(t => ['all','qa_queue','overdue'].includes(t.key));
-    if (this.isDeptManager()) return this.allTabs.filter(t => ['all','my_approval','overdue'].includes(t.key));
-    if (this.isQAOfficer()) return this.allTabs.filter(t => ['my_tasks','all'].includes(t.key));
+    if (this.isQAManager())     return this.allTabs.filter(t => ['all','qa_queue','overdue'].includes(t.key));
+    if (this.isDeptManager())   return this.allTabs.filter(t => ['all','my_approval','overdue'].includes(t.key));
+    if (this.isQAOfficer())     return this.allTabs.filter(t => ['my_tasks','all'].includes(t.key));
+    if (this.isComplianceMgr()) return this.allTabs.filter(t => ['all','qa_queue','overdue'].includes(t.key)); // qa_queue = compliance inbox
+    if (this.isComplianceOfc()) return this.allTabs.filter(t => ['my_tasks','all'].includes(t.key));
     // Employee
     return this.allTabs.filter(t => ['my_requests','draft'].includes(t.key));
   });
@@ -889,14 +998,16 @@ export class RequestsListComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.uiEvents.openNewForm$.pipe(takeUntil(this.destroy$)).subscribe(() => { if (this.canCreate()) this.openCreate(); });
     // Default tab by role
-    if (this.isQAManager())   this.activeTab = 'qa_queue';
-    else if (this.isDeptManager()) this.activeTab = 'my_approval';
-    else if (this.isQAOfficer())  this.activeTab = 'my_tasks';
-    else                           this.activeTab = 'my_requests';
+    if (this.isQAManager())       this.activeTab = 'qa_queue';
+    else if (this.isDeptManager())  this.activeTab = 'my_approval';
+    else if (this.isQAOfficer())    this.activeTab = 'my_tasks';
+    else if (this.isComplianceMgr())this.activeTab = 'qa_queue';   // compliance inbox
+    else if (this.isComplianceOfc())this.activeTab = 'my_tasks';
+    else                            this.activeTab = 'my_requests';
     this.load();
     this.loadStats();
     this.svc.categories().subscribe({ next: (r: any) => this.categories.set(r?.data || r || []) });
-    this.svc.users().subscribe({ next: (r: any) => this.users.set(r?.data || r || []) });
+    // Users loaded per-request in openDetail() based on target_department
   }
 
   load() {
@@ -943,8 +1054,22 @@ export class RequestsListComponent implements OnInit, OnDestroy {
           this.statsCards.set([
             { label: 'All Requests',      value: s.total||0,      color: 'var(--text)' },
             { label: 'Pending My Review', value: s.submitted||0,  color: '#f59e0b', filter: 'my_approval' },
-            { label: 'Approved / Fwd QA', value: s.approved||0,   color: '#10b981' },
+            { label: 'Approved & Forwarded', value: s.approved||0, color: '#10b981' },
             { label: 'Rejected',          value: s.rejected||0,   color: '#ef4444' },
+          ]);
+        } else if (this.isComplianceMgr()) {
+          this.statsCards.set([
+            { label: 'Total',               value: s.total||0,       color: 'var(--text)' },
+            { label: 'Compliance Inbox',    value: s.approved||0,    color: '#a78bfa', filter: 'qa_queue' },
+            { label: 'In Progress',         value: s.in_progress||0, color: '#3b82f6' },
+            { label: 'Overdue',             value: s.overdue||0,     color: '#ef4444', filter: 'overdue' },
+            { label: 'Closed',              value: s.closed||0,      color: '#10b981' },
+          ]);
+        } else if (this.isComplianceOfc()) {
+          this.statsCards.set([
+            { label: 'My Tasks',    value: s.in_progress||0, color: '#a78bfa', filter: 'my_tasks' },
+            { label: 'Completed',   value: s.closed||0,      color: '#10b981' },
+            { label: 'Overdue',     value: s.overdue||0,     color: '#ef4444', filter: 'overdue' },
           ]);
         } else if (this.isQAOfficer()) {
           this.statsCards.set([
@@ -977,7 +1102,7 @@ export class RequestsListComponent implements OnInit, OnDestroy {
   }
 
   openCreate() {
-    this.form = { title: '', description: '', priority: 'medium', type: 'internal', category_id: '', due_date: '' };
+    this.form = { title: '', description: '', priority: 'medium', type: 'internal', category_id: '', due_date: '', target_department: 'quality' };
     this.formError.set('');
     this.showForm = true;
   }
@@ -1009,12 +1134,19 @@ export class RequestsListComponent implements OnInit, OnDestroy {
   openDetail(r: any) {
     this.svc.get(r.id).subscribe({
       next: (res: any) => {
-        this.detail.set(res?.data || res);
+        const req = res?.data || res;
+        this.detail.set(req);
         this.dTab = this.pendingActionCount() > 0 ? 'workflow' : 'details';
-        this.comments.set([]); this.approvals.set([]);
+        this.comments.set([]); this.approvals.set([]);  // clear on every open
         this.assigneeId = ''; this.approveComment = '';
         this.rejectReason = ''; this.closeResolution = '';
         this.newComment = ''; this.savingAction.set(false);
+
+        // Load the correct team for the assignment dropdown based on target_department
+        const target = req?.target_department ?? 'quality';
+        this.svc.users({ target_department: target }).subscribe({
+          next: (ur: any) => this.users.set(ur?.data || ur || [])
+        });
       }
     });
   }
@@ -1076,7 +1208,7 @@ export class RequestsListComponent implements OnInit, OnDestroy {
   }
 
   loadComments() {
-    const d = this.detail(); if (!d || this.comments().length) return;
+    const d = this.detail(); if (!d) return;
     this.loadingComments.set(true);
     this.svc.comments(d.id).subscribe({
       next: (r: any) => { this.comments.set(r?.data || r || []); this.loadingComments.set(false); },
@@ -1093,7 +1225,7 @@ export class RequestsListComponent implements OnInit, OnDestroy {
   }
 
   loadApprovals() {
-    const d = this.detail(); if (!d || this.approvals().length) return;
+    const d = this.detail(); if (!d) return;
     this.loadingApprovals.set(true);
     this.svc.approvals(d.id).subscribe({
       next: (r: any) => { this.approvals.set(r?.data || r || []); this.loadingApprovals.set(false); },

@@ -2,6 +2,7 @@ import { Component, OnDestroy, OnInit, signal } from '@angular/core';
 import { Subject, takeUntil } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AuthService } from '../../../core/services/auth.service';
 import { VendorService } from '../../../core/services/vendor.service';
 import { UiEventService } from '../../../core/services/ui-event.service';
 import { LanguageService } from '../../../core/services/language.service';
@@ -9,7 +10,7 @@ import { LanguageService } from '../../../core/services/language.service';
 @Component({
   selector: 'app-vendor-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, FormsModule],
+  imports: [CommonModule, FormsModule],
   template: `
 <!-- Stats Row -->
 <div class="stats-row">
@@ -41,9 +42,11 @@ import { LanguageService } from '../../../core/services/language.service';
       <option value="critical">Critical</option>
     </select>
   </div>
-  <button class="btn btn-primary btn-sm" (click)="openCreate()">
-    <i class="fas fa-plus"></i> Add Vendor
-  </button>
+  @if (canCreate()) {
+    <button class="btn btn-primary btn-sm" (click)="openCreate()">
+      <i class="fas fa-plus"></i> Add Vendor
+    </button>
+  }
 </div>
 
 <!-- Table -->
@@ -316,12 +319,12 @@ import { LanguageService } from '../../../core/services/language.service';
               <div class="detail-section">
                 <div class="detail-section-title">Quick Actions</div>
                 <div style="display:flex;flex-direction:column;gap:8px;padding-top:4px">
-                  @if (detail()!.qualification_status !== 'qualified') {
+                  @if (detail()!.qualification_status !== 'qualified' && canQualify()) {
                     <button class="btn btn-sm" style="background:#10b981;color:#fff;justify-content:center" (click)="qualify(detail()!)">
                       <i class="fas fa-certificate"></i> Qualify Vendor
                     </button>
                   }
-                  @if (detail()!.status !== 'suspended') {
+                  @if (detail()!.status !== 'suspended' && canQualify()) {
                     <button class="btn btn-secondary btn-sm" style="color:var(--danger);border-color:var(--danger)" (click)="suspendVendor(detail()!)">
                       <i class="fas fa-ban"></i> Suspend Vendor
                     </button>
@@ -370,6 +373,13 @@ import { LanguageService } from '../../../core/services/language.service';
                 <div class="form-group">
                   <label class="form-label">Value</label>
                   <input type="number" class="form-control" [(ngModel)]="contractForm.value" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Currency</label>
+                  <select class="form-control" [(ngModel)]="contractForm.currency">
+                    <option value="SAR">SAR</option><option value="USD">USD</option>
+                    <option value="AED">AED</option><option value="EUR">EUR</option>
+                  </select>
                 </div>
                 <div class="form-group">
                   <label class="form-label">Start Date *</label>
@@ -509,11 +519,14 @@ import { LanguageService } from '../../../core/services/language.service';
     </div>
   </div>
 }
+@if (toast()) {
+  <div class="toast" [class]="'toast-' + toast()!.type">{{ toast()!.msg }}</div>
+}
   `,
   styles: [`
     .stats-row{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
     .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;flex:1;min-width:100px;text-align:center}
-    .stat-num{font-family:'Syne',sans-serif;font-size:26px;font-weight:800}
+    .stat-num{font-family:'Inter',sans-serif;font-size:26px;font-weight:800}
     .stat-lbl{font-size:11px;color:var(--text2);margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
     .page-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:12px;flex-wrap:wrap}
     .filter-group{display:flex;gap:8px;flex-wrap:wrap}
@@ -573,7 +586,7 @@ export class VendorListComponent implements OnInit, OnDestroy {
   evalError       = signal('');
 
   form: any = { name: '', type: 'service_provider', category_id: '', risk_level: 'low', status: 'prospect', country: '', website: '', registration_no: '', tax_no: '', contact_name: '', contact_email: '', contact_phone: '', address: '' };
-  contractForm: any = { title: '', type: 'service', value: '', start_date: '', end_date: '' };
+  contractForm: any = { title: '', type: 'service', value: '', currency: 'SAR', start_date: '', end_date: '' };
   evalForm: any = { evaluation_date: '', period: '', quality_score: '', delivery_score: '', price_score: '', service_score: '', compliance_score: '', comments: '', recommendations: '' };
   scoreFields = [
     { key: 'quality_score', label: 'Quality' },
@@ -586,7 +599,13 @@ export class VendorListComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private searchTimer: any;
 
-  constructor(private svc: VendorService, private uiEvents: UiEventService, public lang: LanguageService) {}
+  constructor(private svc: VendorService, private uiEvents: UiEventService, public lang: LanguageService, public auth: AuthService) {}
+
+
+  private slug = () => (this.auth.currentUser() as any)?.role?.slug ?? '';
+  canCreate  = () => ['super_admin','qa_manager','compliance_manager'].includes(this.slug());
+  canEdit    = () => ['super_admin','qa_manager','compliance_manager'].includes(this.slug());
+  canQualify = () => ['super_admin','qa_manager'].includes(this.slug());
 
   ngOnInit() {
     this.uiEvents.openNewForm$.pipe(takeUntil(this.destroy$)).subscribe(() => this.openCreate());
@@ -657,11 +676,17 @@ export class VendorListComponent implements OnInit, OnDestroy {
   }
 
   qualify(v: any) {
-    this.svc.qualify(v.id).subscribe({ next: (r: any) => { this.detail.set(r); this.load(); this.loadStats(); } });
+    this.svc.qualify(v.id).subscribe({
+      next: (r: any) => { this.detail.set(r); this.load(); this.loadStats(); this.showToast('Vendor qualified', 'success'); },
+      error: (e: any) => this.showToast(e?.error?.message || 'Failed to qualify vendor', 'error')
+    });
   }
 
   suspendVendor(v: any) {
-    this.svc.suspend(v.id).subscribe({ next: (r: any) => { this.detail.set(r); this.load(); this.loadStats(); } });
+    this.svc.suspend(v.id).subscribe({
+      next: (r: any) => { this.detail.set(r); this.load(); this.loadStats(); this.showToast('Vendor suspended', 'success'); },
+      error: (e: any) => this.showToast(e?.error?.message || 'Failed to suspend vendor', 'error')
+    });
   }
 
   reactivateVendor(v: any) {
@@ -686,7 +711,7 @@ export class VendorListComponent implements OnInit, OnDestroy {
       next: (r: any) => {
         this.savingContract.set(false); this.openAddContract = false;
         this.vendorContracts.update(list => [r, ...list]);
-        this.contractForm = { title: '', type: 'service', value: '', start_date: '', end_date: '' };
+        this.contractForm = { title: '', type: 'service', value: '', currency: 'SAR', start_date: '', end_date: '' };
       },
       error: (e: any) => { this.savingContract.set(false); this.contractError.set(e?.error?.message || 'Failed.'); }
     });
@@ -724,12 +749,23 @@ export class VendorListComponent implements OnInit, OnDestroy {
     const diff = (new Date(d).getTime() - Date.now()) / 86400000;
     return diff > 0 && diff <= 30;
   }
-  starsOf(r: number) { return '★'.repeat(Math.round(r)) + '☆'.repeat(5 - Math.round(r)); }
+  starsOf(r: number) {
+    // Ratings are 0–10; convert to 0–5 for star display
+    const stars = Math.min(5, Math.max(0, Math.round(r / 2)));
+    return '★'.repeat(stars) + '☆'.repeat(5 - stars);
+  }
   fmt(s: string | null | undefined) { return (s || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()); }
   riskClass(r: string) { return { low: 'badge-green', medium: 'badge-yellow', high: 'badge-orange', critical: 'badge-red' }[r] || 'badge-draft'; }
   qualClass(q: string) { return { qualified: 'badge-green', pending: 'badge-yellow', not_qualified: 'badge-red', expired: 'badge-orange' }[q] || 'badge-draft'; }
   statusClass(s: string) { return { approved: 'badge-green', active: 'badge-blue', prospect: 'badge-draft', suspended: 'badge-orange', blacklisted: 'badge-red', inactive: 'badge-draft' }[s] || 'badge-draft'; }
   contractTypeClass(t: string) { return { service: 'badge-service', supply: 'badge-green', nda: 'badge-purple', partnership: 'badge-yellow', maintenance: 'badge-blue' }[t] || 'badge-draft'; }
   contractStatusClass(s: string) { return { active: 'badge-green', draft: 'badge-draft', expired: 'badge-red', terminated: 'badge-red', suspended: 'badge-yellow' }[s] || 'badge-draft'; }
+
+  toast = signal<{msg:string,type:string}|null>(null);
+  showToast(msg: string, type: string): void {
+    this.toast.set({ msg, type });
+    setTimeout(() => this.toast.set(null), 3500);
+  }
+
   ngOnDestroy() { this.destroy$.next(); this.destroy$.complete(); }
 }

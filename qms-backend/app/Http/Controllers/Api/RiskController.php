@@ -7,6 +7,19 @@ use Illuminate\Support\Facades\DB;
 
 class RiskController extends Controller {
 
+
+    private function calcRiskLevel(int $likelihood, int $impact): array
+    {
+        $score = $likelihood * $impact;
+        $level = match(true) {
+            $score >= 20 => 'critical',
+            $score >= 12 => 'high',
+            $score >= 6  => 'medium',
+            default      => 'low',
+        };
+        return ['score' => $score, 'risk_level' => $level];
+    }
+
     public function index(Request $request) {
         $q = Risk::with(['category','owner','department'])
             ->when($request->status,       fn($q,$v)=>$q->where('status',$v))
@@ -25,6 +38,7 @@ class RiskController extends Controller {
     }
 
     public function store(Request $request) {
+        if (!auth()->user()->hasPermission('risk.create')) { return response()->json(['success'=>false,'message'=>'Forbidden'],403); }
         $data = $request->validate([
             'title'              => 'required|max:255',
             'description'        => 'required',
@@ -41,6 +55,9 @@ class RiskController extends Controller {
         $data['owner_id']     = $request->user()->id;
         $data['status']       = $data['status'] ?? 'identified';
         $data['reference_no'] = 'RSK-'.date('Y').'-'.str_pad(Risk::count()+1,4,'0',STR_PAD_LEFT);
+        $calc = $this->calcRiskLevel((int)$data['likelihood'], (int)$data['impact']);
+        $data['risk_score'] = $calc['score'];
+        $data['risk_level'] = $calc['risk_level'];
         $risk = Risk::create($data);
         return response()->json($risk->load(['category','owner','department']), 201);
     }
@@ -57,6 +74,13 @@ class RiskController extends Controller {
 
     public function update(Request $request, $id) {
         $risk = Risk::findOrFail($id);
+        if ($request->has('likelihood') || $request->has('impact')) {
+            $l = $request->get('likelihood', $risk->likelihood);
+            $i = $request->get('impact', $risk->impact);
+            $calc = $this->calcRiskLevel((int)$l, (int)$i);
+            $risk->score      = $calc['score'];
+            $risk->risk_level = $calc['risk_level'];
+        }
         $risk->update($request->only([
             'title','description','likelihood','impact','status',
             'treatment_strategy','treatment_plan',
@@ -73,6 +97,13 @@ class RiskController extends Controller {
 
     public function assess(Request $request, $id) {
         $risk = Risk::findOrFail($id);
+        if ($request->has('likelihood') || $request->has('impact')) {
+            $l = $request->get('likelihood', $risk->likelihood);
+            $i = $request->get('impact', $risk->impact);
+            $calc = $this->calcRiskLevel((int)$l, (int)$i);
+            $risk->score      = $calc['score'];
+            $risk->risk_level = $calc['risk_level'];
+        }
         $risk->update($request->only([
             'likelihood','impact','residual_likelihood','residual_impact',
             'status','treatment_strategy','treatment_plan','next_review_date',

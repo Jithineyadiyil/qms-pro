@@ -10,7 +10,7 @@ import { AuthService } from '../../../core/services/auth.service';
 @Component({
   selector: 'app-nc-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, FormsModule],
+  imports: [CommonModule, FormsModule],
   template: `
 <!-- Stats Row -->
 <div class="stats-row">
@@ -474,11 +474,14 @@ import { AuthService } from '../../../core/services/auth.service';
     </div>
   </div>
 }
+@if (toast()) {
+  <div class="toast" [class]="'toast-' + toast()!.type">{{ toast()!.msg }}</div>
+}
   `,
   styles: [`
     .stats-row{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
     .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;flex:1;min-width:100px;text-align:center}
-    .stat-num{font-family:'Syne',sans-serif;font-size:26px;font-weight:800}
+    .stat-num{font-family:'Inter',sans-serif;font-size:26px;font-weight:800}
     .stat-lbl{font-size:11px;color:var(--text2);margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
     .page-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:12px;flex-wrap:wrap}
     .filter-group{display:flex;gap:8px;flex-wrap:wrap}
@@ -517,6 +520,7 @@ export class NcListComponent implements OnInit, OnDestroy {
   categories  = signal<any[]>([]);
   users       = signal<any[]>([]);
   departments = signal<any[]>([]);
+  toast = signal<{msg:string,type:string}|null>(null);
 
   search = ''; filterStatus = ''; filterSeverity = ''; filterSource = '';
   showForm = false; saving = signal(false); formError = signal('');
@@ -648,7 +652,7 @@ export class NcListComponent implements OnInit, OnDestroy {
     const nc = this.detailNc(); if (!nc || !this.assignUserId) return;
     this.svc.assignNc(nc.id, Number(this.assignUserId)).subscribe({
       next: () => { this.reloadDetail(); this.load(); this.loadStats(); this.assignUserId = ''; },
-      error: (e: any) => alert(e?.error?.message || 'Failed to assign')
+      error: (e: any) => this.showToast(e?.error?.message || 'Failed to assign', 'error')
     });
   }
 
@@ -656,7 +660,7 @@ export class NcListComponent implements OnInit, OnDestroy {
     const nc = this.detailNc(); if (!nc) return;
     this.svc.startInvestigation(nc.id, this.rootCauseDraft).subscribe({
       next: () => { this.reloadDetail(); this.load(); },
-      error: (e: any) => alert(e?.error?.message || 'Failed')
+      error: (e: any) => this.showToast(e?.error?.message || 'Failed', 'error')
     });
   }
 
@@ -704,7 +708,7 @@ export class NcListComponent implements OnInit, OnDestroy {
     const nc = this.detailNc(); if (!nc || !this.closureDate) return;
     this.svc.closeNc(nc.id, { actual_closure_date: this.closureDate, root_cause: this.closureRootCause || nc.root_cause }).subscribe({
       next: () => { this.reloadDetail(); this.load(); this.loadStats(); },
-      error: (e: any) => alert(e?.error?.message || 'Failed to close NC')
+      error: (e: any) => this.showToast(e?.error?.message || 'Failed to close NC', 'error')
     });
   }
 
@@ -716,5 +720,11 @@ export class NcListComponent implements OnInit, OnDestroy {
   capaStatusClass(s: string) { return { draft: 'badge-draft', open: 'badge-draft', in_progress: 'badge-blue', effectiveness_review: 'badge-yellow', closed: 'badge-green', cancelled: 'badge-draft' }[s] || 'badge-draft'; }
   priorityClass(p: string) { return { low: 'badge-draft', medium: 'badge-yellow', high: 'badge-orange', critical: 'badge-red' }[p] || 'badge-draft'; }
   fmt(s: string | null | undefined): string { return (s || '').replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()); }
+  
+  showToast(msg: string, type: string): void {
+    this.toast.set({ msg, type });
+    setTimeout(() => this.toast.set(null), 3500);
+  }
+
   ngOnDestroy() { this.destroy$.next(); this.destroy$.complete(); }
 }

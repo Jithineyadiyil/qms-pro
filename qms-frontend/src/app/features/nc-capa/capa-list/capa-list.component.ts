@@ -10,7 +10,7 @@ import { AuthService } from '../../../core/services/auth.service';
 @Component({
   selector: 'app-capa-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, FormsModule],
+  imports: [CommonModule, FormsModule],
   template: `
 <!-- Stats Row -->
 <div class="stats-row">
@@ -403,11 +403,14 @@ import { AuthService } from '../../../core/services/auth.service';
     </div>
   </div>
 }
+@if (toast()) {
+  <div class="toast" [class]="'toast-' + toast()!.type">{{ toast()!.msg }}</div>
+}
   `,
   styles: [`
     .stats-row{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
     .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;flex:1;min-width:100px;text-align:center}
-    .stat-num{font-family:'Syne',sans-serif;font-size:26px;font-weight:800}
+    .stat-num{font-family:'Inter',sans-serif;font-size:26px;font-weight:800}
     .stat-lbl{font-size:11px;color:var(--text2);margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
     .page-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:12px;flex-wrap:wrap}
     .filter-group{display:flex;gap:8px;flex-wrap:wrap}
@@ -444,6 +447,7 @@ export class CapaListComponent implements OnInit, OnDestroy {
   detailCapa  = signal<any>(null);
   users       = signal<any[]>([]);
   departments = signal<any[]>([]);
+  toast = signal<{msg:string,type:string}|null>(null);
   openNcs     = signal<any[]>([]);
 
   search = ''; filterStatus = ''; filterType = ''; filterPriority = '';
@@ -557,7 +561,7 @@ export class CapaListComponent implements OnInit, OnDestroy {
     const c = this.detailCapa(); if (!c) return;
     this.svc.addTask(c.id, this.newTask).subscribe({
       next: () => { this.newTask = { task_description: '', responsible_id: '', due_date: '' }; this.reloadDetail(); },
-      error: (e: any) => alert(e?.error?.message || 'Failed to add task')
+      error: (e: any) => this.showToast(e?.error?.message || 'Failed to add task', 'error')
     });
   }
 
@@ -566,16 +570,16 @@ export class CapaListComponent implements OnInit, OnDestroy {
     const notes = prompt('Completion notes (optional):') ?? '';
     this.svc.completeTask(c.id, task.id, notes).subscribe({
       next: () => this.reloadDetail(),
-      error: (e: any) => alert(e?.error?.message || 'Failed')
+      error: (e: any) => this.showToast(e?.error?.message || 'Failed', 'error')
     });
   }
 
   doVerifyEffectiveness(result: string) {
     const c = this.detailCapa(); if (!c) return;
-    if (!confirm(`Mark this CAPA as "${result.replace(/_/g,' ')}"?`)) return;
+    
     this.svc.effectivenessReview(c.id, result).subscribe({
       next: () => { this.reloadDetail(); this.load(); this.loadStats(); },
-      error: (e: any) => alert(e?.error?.message || 'Failed')
+      error: (e: any) => this.showToast(e?.error?.message || 'Failed', 'error')
     });
   }
 
@@ -590,5 +594,11 @@ export class CapaListComponent implements OnInit, OnDestroy {
   statusClass(s: string) { return { draft: 'badge-draft', open: 'badge-draft', in_progress: 'badge-blue', effectiveness_review: 'badge-yellow', closed: 'badge-green', cancelled: 'badge-draft' }[s] || 'badge-draft'; }
   effClass(e: string) { return { pending: 'badge-draft', effective: 'badge-green', not_effective: 'badge-red', partially_effective: 'badge-yellow' }[e] || 'badge-draft'; }
   fmt(s: string | null | undefined): string { return (s || '').replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()); }
+  
+  showToast(msg: string, type: string): void {
+    this.toast.set({ msg, type });
+    setTimeout(() => this.toast.set(null), 3500);
+  }
+
   ngOnDestroy() { this.destroy$.next(); this.destroy$.complete(); }
 }

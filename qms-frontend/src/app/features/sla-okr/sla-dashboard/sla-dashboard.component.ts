@@ -9,7 +9,7 @@ import { LanguageService } from '../../../core/services/language.service';
 @Component({
   selector: 'app-sla-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, FormsModule],
+  imports: [CommonModule, FormsModule],
   template: `
 <!-- Stats Row -->
 <div class="stats-row">
@@ -24,7 +24,7 @@ import { LanguageService } from '../../../core/services/language.service';
 <!-- Compliance Gauges (active SLAs) -->
 @if (gauges().length > 0) {
   <div style="margin-bottom:20px">
-    <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px">
+    <div style="font-family:'Inter',sans-serif;font-size:14px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px">
       <i class="fas fa-tachometer-alt" style="color:var(--accent)"></i> SLA Compliance Overview
     </div>
     <div class="gauges-grid">
@@ -418,7 +418,7 @@ import { LanguageService } from '../../../core/services/language.service';
                     <span class="badge badge-draft" style="font-size:10px">{{ m.measurement_frequency }}</span>
                   </div>
                   <div class="metric-target">
-                    <span style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--accent)">{{ m.target_value }}</span>
+                    <span style="font-family:'Inter',sans-serif;font-size:22px;font-weight:800;color:var(--accent)">{{ m.target_value }}</span>
                     <span style="font-size:13px;color:var(--text2);margin-left:4px">{{ m.unit || '' }}</span>
                   </div>
                   @if (m.threshold_warning || m.threshold_critical) {
@@ -535,15 +535,15 @@ import { LanguageService } from '../../../core/services/language.service';
   styles: [`
     .stats-row{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
     .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;flex:1;min-width:110px;text-align:center}
-    .stat-num{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;line-height:1}
+    .stat-num{font-family:'Inter',sans-serif;font-size:28px;font-weight:800;line-height:1}
     .stat-lbl{font-size:11px;color:var(--text2);margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
     .gauges-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px}
     .gauge-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:box-shadow .15s}
     .gauge-card:hover{box-shadow:0 4px 20px rgba(0,0,0,.08)}
     .gauge-wrap{position:relative;width:120px;height:120px;margin:0 auto 12px}
     .gauge-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-    .gauge-pct{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;line-height:1}
-    .gauge-pct-big{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;line-height:1}
+    .gauge-pct{font-family:'Inter',sans-serif;font-size:20px;font-weight:800;line-height:1}
+    .gauge-pct-big{font-family:'Inter',sans-serif;font-size:28px;font-weight:800;line-height:1}
     .gauge-name{font-size:13px;font-weight:600;margin-bottom:2px}
     .gauge-client{font-size:11px;color:var(--text3);margin-bottom:8px}
     .gauge-times{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}

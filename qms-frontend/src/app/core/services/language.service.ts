@@ -221,8 +221,8 @@ export class LanguageService {
   readonly dir      = computed(() => this._lang() === 'ar' ? 'rtl' : 'ltr');
   readonly fontFamily = computed(() =>
     this._lang() === 'ar'
-      ? "'IBM Plex Arabic', 'Noto Sans Arabic', 'DM Sans', sans-serif"
-      : "'DM Sans', sans-serif"
+      ? "'Cairo', 'Noto Sans Arabic', 'Inter', sans-serif"
+      : "'Inter', sans-serif"
   );
 
   constructor() { this.apply(); }
@@ -252,14 +252,14 @@ export class LanguageService {
   pageTitle(path: string): string {
     const map: Record<string, string> = {
       '/dashboard': 'Dashboard', '/requests': 'Request Management',
-      '/nc': 'Non-Conformances', '/capa': 'CAPA Management',
+      '/nc-capa': 'Non-Conformances', '/nc-capa/capas': 'CAPA Management',
       '/risk': 'Risk Management', '/risk/matrix': 'Risk Matrix', '/documents': 'Document Control',
       '/audits': 'Audit Management', '/visits': 'Visit Planning',
       '/clients': 'Clients & Insurers', '/sla': 'SLA Management',
       '/okr': 'OKR Management', '/kpi': 'KPI Dashboard',
       '/reports': 'Reports & Analytics', '/vendors': 'Vendor Management',
-      '/contracts': 'Contract Management', '/complaints': 'Complaints Management',
-      '/surveys': 'Customer Satisfaction', '/admin': 'Administration',
+      '/partnerships': 'Contract Management', '/complaints': 'Complaints Management',
+      '/surveys': 'Customer Satisfaction', '/settings': 'Administration',
     };
     const key = Object.keys(map).find(k => path.startsWith(k));
     const title = key ? map[key] : 'QMS Pro';

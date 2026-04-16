@@ -9,7 +9,7 @@ import { LanguageService } from '../../../core/services/language.service';
 @Component({
   selector: 'app-survey-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, FormsModule],
+  imports: [CommonModule, FormsModule],
   template: `
 <!-- Stats Row -->
 <div class="stats-row">
@@ -355,7 +355,7 @@ import { LanguageService } from '../../../core/services/language.service';
                       stroke-dasharray="326.7"
                       [attr.stroke-dashoffset]="326.7 - (326.7 * (detail()!.avg_score / 5))"
                       transform="rotate(-90 60 60)"/>
-                    <text x="60" y="56" text-anchor="middle" font-size="22" font-weight="800" fill="currentColor" style="font-family:'Syne',sans-serif">{{ detail()!.avg_score | number:'1.1-1' }}</text>
+                    <text x="60" y="56" text-anchor="middle" font-size="22" font-weight="800" fill="currentColor" style="font-family:'Inter',sans-serif">{{ detail()!.avg_score | number:'1.1-1' }}</text>
                     <text x="60" y="72" text-anchor="middle" font-size="10" fill="var(--text3)">out of 5</text>
                   </svg>
                 </div>
@@ -623,7 +623,7 @@ import { LanguageService } from '../../../core/services/language.service';
           } @else {
             <div style="max-width:640px">
               <div class="respond-header">
-                <h3 style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin:0 0 6px">{{ detail()!.title }}</h3>
+                <h3 style="font-family:'Inter',sans-serif;font-size:16px;font-weight:700;margin:0 0 6px">{{ detail()!.title }}</h3>
                 @if (detail()!.description) {
                   <p style="color:var(--text2);font-size:13px;margin:0">{{ detail()!.description }}</p>
                 }
@@ -766,7 +766,7 @@ import { LanguageService } from '../../../core/services/language.service';
     .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 18px;flex:1;min-width:130px;display:flex;align-items:center;gap:12px;transition:box-shadow .15s}
     .stat-card:hover{box-shadow:0 2px 12px rgba(0,0,0,.06)}
     .stat-icon{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;font-size:15px;flex-shrink:0}
-    .stat-num{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;line-height:1}
+    .stat-num{font-family:'Inter',sans-serif;font-size:26px;font-weight:800;line-height:1}
     .stat-lbl{font-size:11px;color:var(--text2);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
     .page-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:12px;flex-wrap:wrap}
     .filter-group{display:flex;gap:8px;flex-wrap:wrap}
@@ -780,7 +780,7 @@ import { LanguageService } from '../../../core/services/language.service';
     .survey-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;cursor:pointer;display:flex;flex-direction:column;gap:10px;transition:all .15s}
     .survey-card:hover{box-shadow:0 4px 20px rgba(0,0,0,.08);transform:translateY(-1px);border-color:var(--accent)}
     .survey-card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
-    .survey-title{font-weight:700;font-size:14px;color:var(--text1);line-height:1.3;font-family:'Syne',sans-serif}
+    .survey-title{font-weight:700;font-size:14px;color:var(--text1);line-height:1.3;font-family:'Inter',sans-serif}
     .survey-ref{font-size:11px;color:var(--text3);font-family:monospace;margin-top:2px}
     .survey-desc{font-size:12px;color:var(--text2);margin:0;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
     .survey-type-icon{width:36px;height:36px;border-radius:8px;display:grid;place-items:center;font-size:14px;flex-shrink:0}
@@ -798,7 +798,7 @@ import { LanguageService } from '../../../core/services/language.service';
     .metric-chip.score-ok{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.25)}
     .metric-chip.score-bad{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.25)}
     .metric-chip.neutral{background:var(--surface2)}
-    .metric-val{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;line-height:1}
+    .metric-val{font-family:'Inter',sans-serif;font-size:18px;font-weight:800;line-height:1}
     .metric-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
     .survey-card-footer{display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid var(--border)}
     /* Empty */
@@ -814,7 +814,7 @@ import { LanguageService } from '../../../core/services/language.service';
     /* Overview */
     .overview-grid{display:grid;grid-template-columns:240px 1fr;gap:20px}
     .score-showcase{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px}
-    .big-score{font-family:'Syne',sans-serif;font-size:56px;font-weight:900;line-height:1}
+    .big-score{font-family:'Inter',sans-serif;font-size:56px;font-weight:900;line-height:1}
     .score-label{font-size:13px;font-weight:600;color:var(--text2)}
     .score-sub{font-size:12px;color:var(--text3)}
     .resp-count-chip{margin-top:8px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 14px;font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px}
@@ -854,12 +854,12 @@ import { LanguageService } from '../../../core/services/language.service';
     /* Analytics */
     .analytics-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:12px;margin-bottom:4px}
     .a-stat{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
-    .a-stat-num{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;line-height:1}
+    .a-stat-num{font-family:'Inter',sans-serif;font-size:28px;font-weight:800;line-height:1}
     .a-stat-lbl{font-size:11px;color:var(--text3);margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
     .q-analytics-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px}
     .q-analytics-header{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
     .rating-analytics{display:flex;gap:24px;align-items:flex-start}
-    .avg-score-big{font-family:'Syne',sans-serif;font-size:36px;font-weight:800;line-height:1;flex-shrink:0}
+    .avg-score-big{font-family:'Inter',sans-serif;font-size:36px;font-weight:800;line-height:1;flex-shrink:0}
     .dist-bars{flex:1;display:flex;flex-direction:column;gap:5px}
     .dist-row{display:flex;align-items:center;gap:8px}
     .dist-label{width:20px;text-align:right;font-size:12px;font-weight:600;color:var(--text2);flex-shrink:0}
@@ -899,7 +899,7 @@ import { LanguageService } from '../../../core/services/language.service';
     .choice-option.selected{border-color:var(--accent);background:rgba(79,70,229,.08);color:var(--accent);font-weight:500}
     .thankyou-screen{text-align:center;padding:40px 20px}
     .thankyou-icon{font-size:56px;color:#10b981;margin-bottom:16px}
-    .thankyou-screen h3{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin:0 0 10px}
+    .thankyou-screen h3{font-family:'Inter',sans-serif;font-size:22px;font-weight:800;margin:0 0 10px}
     .thankyou-screen p{color:var(--text2);font-size:14px;margin:0 0 20px}
   `]
 })
@@ -1094,7 +1094,7 @@ export class SurveyListComponent implements OnInit, OnDestroy {
 
   doClose() {
     const d = this.detail(); if (!d) return;
-    if (!confirm('Close this survey? No more responses will be accepted.')) return;
+    
     this.actionSaving.set(true);
     this.svc.close(d.id).subscribe({
       next: () => { this.actionSaving.set(false); this.reloadDetail(); this.load(); this.loadStats(); }
@@ -1124,7 +1124,7 @@ export class SurveyListComponent implements OnInit, OnDestroy {
 
   deleteQ(qid: number) {
     const d = this.detail(); if (!d) return;
-    if (!confirm('Remove this question?')) return;
+    
     this.svc.deleteQuestion(d.id, qid).subscribe({ next: () => this.reloadDetail() });
   }
 

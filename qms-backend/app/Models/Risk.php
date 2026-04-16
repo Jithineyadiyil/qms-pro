@@ -4,7 +4,7 @@ use Illuminate\Database\Eloquent\Model;
 class Risk extends Model {
     protected $fillable = [
         'reference_no','title','description','category_id','owner_id','department_id','type','status',
-        'likelihood','impact','residual_likelihood','residual_impact','treatment_strategy','treatment_plan',
+        'likelihood','impact','risk_score','risk_level','residual_likelihood','residual_impact','treatment_strategy','treatment_plan',
         'review_date','next_review_date','attachments',
     ];
     protected $casts = ['attachments'=>'array','review_date'=>'date','next_review_date'=>'date'];

@@ -9,7 +9,7 @@ import { LanguageService } from '../../../core/services/language.service';
 @Component({
   selector: 'app-visit-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, FormsModule],
+  imports: [CommonModule, FormsModule],
   template: `
 <!-- Stats Row -->
 <div class="stats-row">
@@ -479,11 +479,14 @@ import { LanguageService } from '../../../core/services/language.service';
     </div>
   </div>
 }
+@if (toast()) {
+  <div class="toast" [class]="'toast-' + toast()!.type">{{ toast()!.msg }}</div>
+}
   `,
   styles: [`
     .stats-row { display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
     .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px 20px; flex:1; min-width:120px; text-align:center; }
-    .stat-num { font-family:'Syne',sans-serif; font-size:28px; font-weight:800; }
+    .stat-num { font-family:'Inter',sans-serif; font-size:28px; font-weight:800; }
     .stat-lbl { font-size:11px; color:var(--text2); margin-top:4px; text-transform:uppercase; letter-spacing:.5px; }
     .page-toolbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; gap:12px; flex-wrap:wrap; }
     .filter-group { display:flex; gap:8px; flex-wrap:wrap; }
@@ -491,7 +494,7 @@ import { LanguageService } from '../../../core/services/language.service';
     .visit-card { transition:box-shadow .2s; }
     .visit-card:hover { box-shadow:0 4px 20px rgba(0,0,0,.12); }
     .date-badge { text-align:center; background:linear-gradient(135deg,var(--accent),var(--accent2,var(--accent))); border-radius:12px; padding:10px 8px; color:#fff; min-width:56px; }
-    .date-day { font-family:'Syne',sans-serif; font-size:26px; font-weight:800; line-height:1; }
+    .date-day { font-family:'Inter',sans-serif; font-size:26px; font-weight:800; line-height:1; }
     .date-mon { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
     .date-yr { font-size:10px; opacity:.8; }
     .avatar-xs { width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--accent2,var(--accent))); display:grid; place-items:center; font-size:11px; font-weight:700; color:#fff; flex-shrink:0; }
@@ -531,6 +534,7 @@ export class VisitListComponent implements OnInit, OnDestroy {
   stats       = signal<any[]>([]);
   clients     = signal<any[]>([]);
   detailVisit = signal<any>(null);
+  toast = signal<{msg:string,type:string}|null>(null);
 
   filterType   = '';
   filterStatus = '';
@@ -728,7 +732,7 @@ export class VisitListComponent implements OnInit, OnDestroy {
         }
       },
       error: (e: any) => {
-        alert('Could not confirm visit: ' + (e?.error?.message || 'Server error'));
+        this.showToast('Could not confirm visit: ' + (e?.error?.message || 'Server error'), 'error');
       }
     });
   }
@@ -743,7 +747,7 @@ export class VisitListComponent implements OnInit, OnDestroy {
         }
       },
       error: (e: any) => {
-        alert('Could not start visit: ' + (e?.error?.message || 'Server error'));
+        this.showToast('Could not start visit: ' + (e?.error?.message || 'Server error'), 'error');
       }
     });
   }
@@ -758,7 +762,7 @@ export class VisitListComponent implements OnInit, OnDestroy {
         }
       },
       error: (e: any) => {
-        alert('Could not complete visit: ' + (e?.error?.message || 'Server error'));
+        this.showToast('Could not complete visit: ' + (e?.error?.message || 'Server error'), 'error');
       }
     });
   }
@@ -1035,6 +1039,12 @@ export class VisitListComponent implements OnInit, OnDestroy {
       win.document.write(html);
       win.document.close();
     }
+  }
+
+  
+  showToast(msg: string, type: string): void {
+    this.toast.set({ msg, type });
+    setTimeout(() => this.toast.set(null), 3500);
   }
 
   ngOnDestroy() { this.destroy$.next(); this.destroy$.complete(); }

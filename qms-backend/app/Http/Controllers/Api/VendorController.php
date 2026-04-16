@@ -14,8 +14,10 @@ class VendorController extends Controller {
         return response()->json($q->orderBy('name')->paginate(15));
     }
     public function store(Request $request) {
+        if (!auth()->user()->hasPermission('vendor.create')) { return response()->json(['success'=>false,'message'=>'Forbidden'],403); }
         $data = $request->validate(['name'=>'required','category_id'=>'nullable|exists:vendor_categories,id','type'=>'required','contact_name'=>'nullable','contact_email'=>'nullable|email','contact_phone'=>'nullable','country'=>'nullable','website'=>'nullable','risk_level'=>'in:low,medium,high,critical','registration_no'=>'nullable','tax_no'=>'nullable']);
-        $data['code'] = 'VND' . str_pad(Vendor::count()+1,3,'0',STR_PAD_LEFT);
+        $data['code']   = 'VND' . str_pad(Vendor::count()+1,3,'0',STR_PAD_LEFT);
+        $data['status'] = $data['status'] ?? 'prospect';
         $vendor = Vendor::create($data);
         return response()->json($vendor->load(['category']),201);
     }
@@ -28,7 +30,10 @@ class VendorController extends Controller {
     public function destroy($id) { Vendor::findOrFail($id)->delete(); return response()->json(['message'=>'Vendor deleted.']); }
     public function addEvaluation(Request $request, $id) {
         Vendor::findOrFail($id);
-        $eval = VendorEvaluation::create(array_merge($request->validate(['evaluation_date'=>'required|date','period'=>'nullable','quality_score'=>'nullable|numeric|between:0,10','delivery_score'=>'nullable|numeric|between:0,10','price_score'=>'nullable|numeric|between:0,10','service_score'=>'nullable|numeric|between:0,10','compliance_score'=>'nullable|numeric|between:0,10','comments'=>'nullable','recommendations'=>'nullable']),['vendor_id'=>$id,'evaluated_by_id'=>$request->user()->id]));
+        $validated = $request->validate(['evaluation_date'=>'required|date','period'=>'nullable','quality_score'=>'nullable|numeric|between:0,10','delivery_score'=>'nullable|numeric|between:0,10','price_score'=>'nullable|numeric|between:0,10','service_score'=>'nullable|numeric|between:0,10','compliance_score'=>'nullable|numeric|between:0,10','comments'=>'nullable','recommendations'=>'nullable']);
+        $scores = array_filter([$validated['quality_score']??null,$validated['delivery_score']??null,$validated['price_score']??null,$validated['service_score']??null,$validated['compliance_score']??null], fn($v) => !is_null($v));
+        $validated['overall_score'] = count($scores) > 0 ? round(array_sum($scores)/count($scores), 2) : null;
+        $eval = VendorEvaluation::create(array_merge($validated,['vendor_id'=>$id,'evaluated_by_id'=>$request->user()->id]));
         // Update vendor overall rating
         $avgScore = VendorEvaluation::where('vendor_id',$id)->where('status','approved')->avg('overall_score');
         if ($avgScore) Vendor::find($id)->update(['overall_rating'=>round($avgScore,1)]);
@@ -63,7 +68,8 @@ class VendorController extends Controller {
     public function storeContract(Request $request) {
         $data = $request->validate(['vendor_id'=>'required|exists:vendors,id','title'=>'required','type'=>'required','value'=>'nullable|numeric','start_date'=>'required|date','end_date'=>'nullable|date','status'=>'in:draft,active,expired,terminated']);
         $data['contract_no'] = 'CON-'.date('Y').'-'.str_pad(\App\Models\VendorContract::count()+1,4,'0',STR_PAD_LEFT);
-        $data['owner_id'] = $request->user()->id;
+        $data['status']      = $data['status'] ?? 'draft';
+        $data['owner_id']    = $request->user()->id;
         $contract = \App\Models\VendorContract::create($data);
         return response()->json($contract->load(['vendor','owner']), 201);
     }

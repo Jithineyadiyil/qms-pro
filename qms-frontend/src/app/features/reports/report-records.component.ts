@@ -321,6 +321,9 @@ type RecordType = 'complaints'|'ncs'|'capas'|'risks'|'audits'|'requests';
     }
   </div>
 </div>
+@if (toast()) {
+  <div class="toast" [class]="'toast-' + toast()!.type">{{ toast()!.msg }}</div>
+}
   `,
   styles: [`
     :host { display:block; }
@@ -330,7 +333,7 @@ type RecordType = 'complaints'|'ncs'|'capas'|'risks'|'audits'|'requests';
     .rec-aside { width:210px; flex-shrink:0; background:var(--surface); border-right:1px solid var(--border); border-radius:14px 0 0 14px; padding:16px 0; display:flex; flex-direction:column; }
     .aside-logo { font-size:22px; color:var(--accent); text-align:center; padding:4px 0 12px; border-bottom:1px solid var(--border); margin-bottom:12px; }
     .aside-section { font-size:10px; font-weight:700; color:var(--text3); letter-spacing:1px; text-transform:uppercase; padding:8px 16px 4px; }
-    .aside-btn { display:flex; align-items:center; gap:9px; padding:8px 16px; border:none; background:none; color:var(--text2); font-size:12px; font-weight:500; cursor:pointer; font-family:'DM Sans',sans-serif; text-align:left; width:100%; transition:all .13s; border-left:2px solid transparent; position:relative; }
+    .aside-btn { display:flex; align-items:center; gap:9px; padding:8px 16px; border:none; background:none; color:var(--text2); font-size:12px; font-weight:500; cursor:pointer; font-family:'Inter',sans-serif; text-align:left; width:100%; transition:all .13s; border-left:2px solid transparent; position:relative; }
     .aside-btn:hover { background:var(--surface2); color:var(--text); }
     .aside-btn.active { background:rgba(59,130,246,.1); color:var(--accent); border-left-color:var(--accent); font-weight:600; }
     .aside-btn i { width:14px; text-align:center; font-size:12px; }
@@ -338,9 +341,9 @@ type RecordType = 'complaints'|'ncs'|'capas'|'risks'|'audits'|'requests';
     .aside-spacer { flex:1; }
     .filter-wrap { padding:4px 12px; display:flex; flex-direction:column; gap:4px; }
     .filter-label { font-size:10px; color:var(--text3); font-weight:600; }
-    .filter-input { background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:11px; font-family:'DM Sans',sans-serif; padding:5px 8px; width:100%; outline:none; }
+    .filter-input { background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:11px; font-family:'Inter',sans-serif; padding:5px 8px; width:100%; outline:none; }
     select.filter-input option { background:var(--surface); }
-    .exp-btn { display:flex; align-items:center; gap:7px; margin:2px 12px; padding:7px 12px; border:1px solid var(--border); border-radius:8px; background:none; color:var(--text2); font-size:11px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all .13s; }
+    .exp-btn { display:flex; align-items:center; gap:7px; margin:2px 12px; padding:7px 12px; border:1px solid var(--border); border-radius:8px; background:none; color:var(--text2); font-size:11px; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; transition:all .13s; }
     .exp-btn:hover:not([disabled]) { background:var(--surface2); color:var(--text); }
     .exp-btn[disabled] { opacity:.4; cursor:default; }
     .exp-pdf:hover:not([disabled])  { color:#ef4444; border-color:rgba(239,68,68,.3); }
@@ -350,12 +353,12 @@ type RecordType = 'complaints'|'ncs'|'capas'|'risks'|'audits'|'requests';
     /* Body */
     .rec-body { flex:1; padding:20px; min-width:0; background:var(--bg); border-radius:0 14px 14px 0; display:flex; flex-direction:column; gap:12px; }
     .rec-topbar { display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:10px; }
-    .rec-heading { font-family:'Syne',sans-serif; font-size:18px; font-weight:800; }
+    .rec-heading { font-family:'Inter',sans-serif; font-size:18px; font-weight:800; }
     .rec-sub { font-size:11px; color:var(--text2); margin-top:2px; }
     .rec-top-right { display:flex; align-items:center; gap:10px; }
     .search-wrap { display:flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--border); border-radius:9px; padding:7px 12px; min-width:260px; }
     .search-wrap i { color:var(--text3); font-size:12px; }
-    .search-input { background:none; border:none; outline:none; color:var(--text); font-size:12px; font-family:'DM Sans',sans-serif; flex:1; }
+    .search-input { background:none; border:none; outline:none; color:var(--text); font-size:12px; font-family:'Inter',sans-serif; flex:1; }
     .search-clear { background:none; border:none; color:var(--text3); cursor:pointer; font-size:11px; padding:0; }
     .search-clear:hover { color:var(--text); }
     .spin { animation:spin .8s linear infinite; }
@@ -364,7 +367,7 @@ type RecordType = 'complaints'|'ncs'|'capas'|'risks'|'audits'|'requests';
     /* Summary strip */
     .summary-strip { display:flex; flex-wrap:wrap; gap:8px; }
     .sum-chip { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:7px 14px; display:flex; flex-direction:column; align-items:center; min-width:80px; }
-    .sum-v { font-family:'Syne',sans-serif; font-size:18px; font-weight:800; }
+    .sum-v { font-family:'Inter',sans-serif; font-size:18px; font-weight:800; }
     .sum-l { font-size:10px; color:var(--text2); margin-top:1px; }
     .sum-chip.chip-red    { border-color:rgba(239,68,68,.25);  }
     .sum-chip.chip-red .sum-v   { color:var(--danger); }
@@ -384,7 +387,7 @@ type RecordType = 'complaints'|'ncs'|'capas'|'risks'|'audits'|'requests';
     .tc       { text-align:center; }
     .muted    { color:var(--text3); }
     .row-overdue { background:rgba(239,68,68,.04); }
-    .score-pill { display:inline-block; padding:1px 7px; border-radius:5px; font-family:'Syne',sans-serif; font-weight:700; font-size:12px; }
+    .score-pill { display:inline-block; padding:1px 7px; border-radius:5px; font-family:'Inter',sans-serif; font-weight:700; font-size:12px; }
     .ref { font-family:monospace; font-size:12px; color:var(--accent); }
 
     /* Skeleton */
@@ -407,6 +410,7 @@ export class ReportRecordsComponent implements OnInit {
   active    = signal<RecordType>('complaints');
   loading   = signal(true);
   exporting = signal<string|false>(false);
+  toast = signal<{msg:string,type:string}|null>(null);
   rows      = signal<any[]>([]);
   total     = signal(0);
   filters   = signal<any>(null);
@@ -533,7 +537,7 @@ export class ReportRecordsComponent implements OnInit {
 
   exportExcel() {
     const XLSX = (window as any).XLSX;
-    if (!XLSX) { alert('XLSX not loaded'); return; }
+    if (!XLSX) { this.showToast('Export library not loaded', 'error'); return; }
     this.exporting.set('excel');
     this.fetchAll(data => {
       const cols = this.getCols();
@@ -547,7 +551,7 @@ export class ReportRecordsComponent implements OnInit {
 
   exportPDF() {
     const jsPDF = (window as any).jspdf?.jsPDF;
-    if (!jsPDF) { alert('jsPDF not loaded'); return; }
+    if (!jsPDF) { this.showToast('Export library not loaded', 'error'); return; }
     this.exporting.set('pdf');
     this.fetchAll(data => {
       const doc  = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
@@ -645,4 +649,9 @@ export class ReportRecordsComponent implements OnInit {
   auditStCls(s: string): string { return ({planned:'badge-blue',in_progress:'badge-yellow',completed:'badge-green',cancelled:'badge-draft'} as any)[s]||'badge-draft'; }
   requestStCls(s: string): string { return ({draft:'badge-draft',submitted:'badge-blue',under_review:'badge-yellow',approved:'badge-green',rejected:'badge-red',closed:'badge-green'} as any)[s]||'badge-draft'; }
   complaintStCls(s: string): string { return ({open:'badge-red',in_progress:'badge-yellow',resolved:'badge-green',closed:'badge-draft',withdrawn:'badge-draft'} as any)[s]||'badge-draft'; }
+  showToast(msg: string, type: string): void {
+    this.toast.set({ msg, type });
+    setTimeout(() => this.toast.set(null), 3500);
+  }
+
 }

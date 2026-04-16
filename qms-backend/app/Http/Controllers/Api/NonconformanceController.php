@@ -35,6 +35,7 @@ class NonconformanceController extends Controller {
     }
 
     public function store(Request $request) {
+        if (!auth()->user()->hasPermission('nc.create')) { return response()->json(['success'=>false,'message'=>'Forbidden'],403); }
         $data = $request->validate([
             'title'               => 'required|max:255',
             'description'         => 'required',
@@ -48,6 +49,7 @@ class NonconformanceController extends Controller {
         ]);
         $data['detected_by_id'] = $request->user()->id;
         $data['reference_no']   = 'NC-' . date('Y') . '-' . str_pad(Nonconformance::count()+1,4,'0',STR_PAD_LEFT);
+        $data['status']         = 'open';
         $nc = Nonconformance::create($data);
         return response()->json($nc->load(['category','detectedBy','department']), 201);
     }

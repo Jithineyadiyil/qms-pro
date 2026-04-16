@@ -38,13 +38,13 @@ import { filter } from 'rxjs/operators';
       <div class="nav-section">{{ lang.t('Quality') }}</div>
     }
     @if (can('nc.view')) {
-      <a class="nav-item" routerLink="/nc" routerLinkActive="active">
+      <a class="nav-item" routerLink="/nc-capa" routerLinkActive="active">
         <i class="fas fa-triangle-exclamation"></i> {{ lang.t('Non-Conformances') }}
         @if (counts().ncs > 0) { <span class="nav-badge">{{ counts().ncs }}</span> }
       </a>
     }
     @if (can('capa.view')) {
-      <a class="nav-item" routerLink="/capa" routerLinkActive="active">
+      <a class="nav-item" routerLink="/nc-capa/capas" routerLinkActive="active">
         <i class="fas fa-circle-check"></i> {{ lang.t('CAPA') }}
         @if (counts().capas > 0) { <span class="nav-badge warn">{{ counts().capas }}</span> }
       </a>
@@ -121,7 +121,7 @@ import { filter } from 'rxjs/operators';
       <a class="nav-item" routerLink="/vendors" routerLinkActive="active">
         <i class="fas fa-truck-ramp-box"></i> {{ lang.t('Vendor Management') }}
       </a>
-      <a class="nav-item" routerLink="/contracts" routerLinkActive="active">
+      <a class="nav-item" routerLink="/partnerships" routerLinkActive="active">
         <i class="fas fa-file-signature"></i> {{ lang.t('Contract Management') }}
       </a>
     }
@@ -129,7 +129,7 @@ import { filter } from 'rxjs/operators';
     <!-- ── Admin — super_admin only ── -->
     @if (can('admin.access')) {
       <div class="nav-section">{{ lang.t('Admin') }}</div>
-      <a class="nav-item" routerLink="/admin" routerLinkActive="active">
+      <a class="nav-item" routerLink="/settings" routerLinkActive="active">
         <i class="fas fa-gear"></i> {{ lang.t('Administration') }}
       </a>
     }
@@ -153,7 +153,7 @@ import { filter } from 'rxjs/operators';
 
 <div class="main">
   <header class="header">
-    <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700">{{ currentPageTitle() }}</div>
+    <div style="font-family:'Inter',sans-serif;font-size:16px;font-weight:700">{{ currentPageTitle() }}</div>
     <div class="header-search" style="margin-left:auto">
       <i class="fas fa-search"></i>
       <input type="text" [placeholder]="lang.t('Search records, NCs, risks...')">
@@ -191,7 +191,7 @@ import { filter } from 'rxjs/operators';
     :host { display:block; }
     .header { position:sticky; top:0; z-index:50; height:var(--header-h); background:rgba(10,11,14,.85); backdrop-filter:blur(16px); border-bottom:1px solid var(--border); display:flex; align-items:center; gap:16px; padding:0 24px; flex-shrink:0; }
     .header-search { display:flex; align-items:center; gap:8px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:6px 12px; min-width:220px; }
-    .header-search input { background:none; border:none; outline:none; color:var(--text); font-size:13px; width:100%; font-family:'DM Sans',sans-serif; }
+    .header-search input { background:none; border:none; outline:none; color:var(--text); font-size:13px; width:100%; font-family:'Inter',sans-serif; }
     .header-search input::placeholder { color:var(--text3); }
     .header-search i { color:var(--text3); font-size:13px; }
     .header-actions { display:flex; align-items:center; gap:8px; }

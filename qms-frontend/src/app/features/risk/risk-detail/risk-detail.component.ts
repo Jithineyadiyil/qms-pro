@@ -2,6 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule, DatePipe, TitleCasePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { AuthService } from '../../../core/services/auth.service';
 import { RiskService } from '../../../core/services/risk.service';
 
 @Component({
@@ -415,7 +416,7 @@ import { RiskService } from '../../../core/services/risk.service';
     .hdr-low  { border-left-color:var(--success); }
     .hdr-left { flex:1; min-width:250px; }
     .hdr-ref  { font-family:monospace; font-size:11px; color:var(--accent); background:rgba(59,130,246,.08); display:inline-block; padding:2px 7px; border-radius:4px; margin-bottom:6px; }
-    .hdr-title { font-family:'Syne',sans-serif; font-size:20px; font-weight:800; line-height:1.2; margin-bottom:8px; }
+    .hdr-title { font-family:'Inter',sans-serif; font-size:20px; font-weight:800; line-height:1.2; margin-bottom:8px; }
     .hdr-meta { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; }
     .meta-tag { font-size:11px; color:var(--text2); display:flex; align-items:center; gap:4px; background:var(--surface2); border:1px solid var(--border); padding:2px 8px; border-radius:5px; }
     .hdr-desc { font-size:13px; color:var(--text2); line-height:1.55; }
@@ -425,7 +426,7 @@ import { RiskService } from '../../../core/services/risk.service';
     .score-ring.h-high { color:#fb923c; }
     .score-ring.h-med  { color:var(--warning); }
     .score-ring.h-low  { color:var(--success); }
-    .sr-score { font-family:'Syne',sans-serif; font-size:30px; font-weight:800; line-height:1; }
+    .sr-score { font-family:'Inter',sans-serif; font-size:30px; font-weight:800; line-height:1; }
     .sr-label { font-size:8px; color:var(--text3); letter-spacing:.5px; }
     .sr-level { font-size:10px; font-weight:800; margin-top:1px; }
     .hdr-badges { display:flex; gap:5px; flex-wrap:wrap; }
@@ -438,10 +439,10 @@ import { RiskService } from '../../../core/services/risk.service';
     @media(max-width:900px) { .detail-grid { grid-template-columns:1fr; } }
     .left-col,.right-col { display:flex; flex-direction:column; gap:14px; }
     .card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px 18px; }
-    .sec-title { font-family:'Syne',sans-serif; font-size:13px; font-weight:800; display:flex; align-items:center; gap:7px; margin-bottom:12px; }
+    .sec-title { font-family:'Inter',sans-serif; font-size:13px; font-weight:800; display:flex; align-items:center; gap:7px; margin-bottom:12px; }
     .sec-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
     .sec-hdr .sec-title { margin-bottom:0; }
-    .count-badge { background:var(--surface2); border:1px solid var(--border); border-radius:5px; padding:1px 6px; font-size:10px; color:var(--text2); font-family:'DM Sans',sans-serif; font-weight:700; }
+    .count-badge { background:var(--surface2); border:1px solid var(--border); border-radius:5px; padding:1px 6px; font-size:10px; color:var(--text2); font-family:'Inter',sans-serif; font-weight:700; }
 
     /* Score row */
     .score-row { display:flex; align-items:center; gap:0; padding:12px 16px; }
@@ -449,7 +450,7 @@ import { RiskService } from '../../../core/services/risk.service';
     .sc-divider { width:1px; height:60px; background:var(--border); flex-shrink:0; }
     .sc-label { font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:.4px; margin-bottom:4px; }
     .sc-lxi   { font-size:11px; color:var(--text2); margin-bottom:3px; }
-    .sc-score { font-family:'Syne',sans-serif; font-size:26px; font-weight:800; }
+    .sc-score { font-family:'Inter',sans-serif; font-size:26px; font-weight:800; }
     .sc-score.h-crit { color:var(--danger); } .sc-score.h-high { color:#fb923c; } .sc-score.h-med { color:var(--warning); } .sc-score.h-low { color:var(--success); }
     .sm-badge { font-size:10px; padding:1px 7px; }
 
@@ -490,7 +491,7 @@ import { RiskService } from '../../../core/services/risk.service';
     .review-latest { border-color:rgba(59,130,246,.3); background:rgba(59,130,246,.03); }
     .latest-tag { position:absolute; top:-8px; left:14px; background:var(--accent); color:#fff; font-size:9px; font-weight:800; padding:1px 7px; border-radius:4px; letter-spacing:.4px; }
     .rev-hdr  { display:flex; align-items:center; justify-content:space-between; margin-bottom:7px; }
-    .rev-date { font-family:'Syne',sans-serif; font-size:13px; font-weight:700; }
+    .rev-date { font-family:'Inter',sans-serif; font-size:13px; font-weight:700; }
     .rev-by   { font-size:11px; color:var(--text2); display:flex; align-items:center; gap:4px; }
     .rev-scores { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:6px; }
     .rev-sc   { font-size:11px; font-weight:700; background:var(--surface2); border:1px solid var(--border); padding:2px 7px; border-radius:5px; }
@@ -501,7 +502,7 @@ import { RiskService } from '../../../core/services/risk.service';
     .modal    { background:var(--surface); border:1px solid var(--border); border-radius:16px; width:100%; overflow:hidden; display:flex; flex-direction:column; max-height:90vh; }
     .modal-lg { max-width:640px; } .modal-md { max-width:560px; }
     .modal-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--border); }
-    .modal-title  { font-family:'Syne',sans-serif; font-size:15px; font-weight:800; display:flex; align-items:center; gap:8px; }
+    .modal-title  { font-family:'Inter',sans-serif; font-size:15px; font-weight:800; display:flex; align-items:center; gap:8px; }
     .modal-close  { width:30px; height:30px; border:1px solid var(--border); border-radius:7px; background:none; color:var(--text2); cursor:pointer; font-size:12px; }
     .modal-body   { padding:20px; overflow-y:auto; flex:1; }
     .modal-footer { padding:14px 20px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:8px; }
@@ -509,12 +510,12 @@ import { RiskService } from '../../../core/services/risk.service';
     .fg    { display:flex; flex-direction:column; gap:4px; }
     .fg-2  { grid-column:span 2; }
     .lbl   { font-size:11px; font-weight:700; color:var(--text2); text-transform:uppercase; letter-spacing:.4px; }
-    .fc    { background:var(--surface2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:13px; font-family:'DM Sans',sans-serif; padding:9px 12px; outline:none; width:100%; transition:border-color .13s; }
+    .fc    { background:var(--surface2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:13px; font-family:'Inter',sans-serif; padding:9px 12px; outline:none; width:100%; transition:border-color .13s; }
     .fc:focus { border-color:var(--accent); }
     select.fc option { background:var(--surface); }
     .form-err { background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.2); color:var(--danger); padding:10px 14px; border-radius:8px; font-size:12px; margin-top:10px; }
     .score-btns { display:flex; gap:5px; margin-top:4px; }
-    .sb { width:34px; height:34px; border:1px solid var(--border); border-radius:8px; background:none; color:var(--text2); font-size:13px; font-family:'Syne',sans-serif; font-weight:800; cursor:pointer; transition:all .13s; }
+    .sb { width:34px; height:34px; border:1px solid var(--border); border-radius:8px; background:none; color:var(--text2); font-size:13px; font-family:'Inter',sans-serif; font-weight:800; cursor:pointer; transition:all .13s; }
     .sb-sm { width:28px; height:28px; font-size:11px; }
     .sb:hover { background:var(--border); }
     .sb.sb-active { background:var(--accent); border-color:var(--accent); color:#fff; }
@@ -522,7 +523,7 @@ import { RiskService } from '../../../core/services/risk.service';
     .score-row-sm { display:flex; flex-direction:column; gap:12px; }
     .assess-preview { grid-column:span 2; display:flex; align-items:center; justify-content:center; gap:16px; padding:12px; background:var(--surface2); border-radius:10px; border:1px solid var(--border); }
     .ap-item { display:flex; flex-direction:column; align-items:center; width:70px; height:70px; border-radius:12px; justify-content:center; }
-    .ap-score { font-family:'Syne',sans-serif; font-size:24px; font-weight:800; }
+    .ap-score { font-family:'Inter',sans-serif; font-size:24px; font-weight:800; }
     .ap-lbl   { font-size:9px; opacity:.7; }
     .h-low  { background:rgba(16,185,129,.2); color:#10b981; }
     .h-med  { background:rgba(245,158,11,.25); color:#f59e0b; }
@@ -548,7 +549,12 @@ export class RiskDetailComponent implements OnInit {
   controlForm: any = { control_description:'', control_type:'preventive', effectiveness:'not_tested', last_tested_date:'', next_test_date:'' };
   reviewForm: any = { review_date:'', next_review_date:'', likelihood_reviewed:0, impact_reviewed:0, status_after:'', comments:'' };
 
-  constructor(private route: ActivatedRoute, private router: Router, private svc: RiskService) {}
+  constructor(private route: ActivatedRoute, private router: Router, private svc: RiskService, private auth: AuthService) {}
+
+
+  private slug = () => (this.auth.currentUser() as any)?.role?.slug ?? '';
+  canEdit   = () => ['super_admin','qa_manager','quality_supervisor'].includes(this.slug());
+  canDelete = () => ['super_admin','qa_manager'].includes(this.slug());
 
   ngOnInit() {
     const id = Number(this.route.snapshot.paramMap.get('id'));
@@ -605,7 +611,7 @@ export class RiskDetailComponent implements OnInit {
     });
   }
   deleteControl(c: any) {
-    if (!confirm(`Delete control: "${c.control_description.substring(0,60)}…"?`)) return;
+    
     this.svc.deleteControl(this.risk()!.id, c.id).subscribe({ next: () => this.reload() });
   }
 

@@ -17,6 +17,7 @@ class AuditController extends Controller {
     }
 
     public function store(Request $request) {
+        if (!auth()->user()->hasPermission('audit.create')) { return response()->json(['success'=>false,'message'=>'Forbidden'],403); }
         $data = $request->validate([
             'program_id'         => 'nullable|exists:audit_programs,id',
             'title'              => 'required|max:255',
@@ -29,6 +30,7 @@ class AuditController extends Controller {
             'planned_end_date'   => 'required|date',
         ]);
         $data['lead_auditor_id'] = $request->user()->id;
+        $data['status']         = 'planned';
         $data['reference_no']   = 'AUD-' . date('Y') . '-' . str_pad(Audit::count()+1,4,'0',STR_PAD_LEFT);
         $audit = Audit::create($data);
         $audit->team()->syncWithoutDetaching([$request->user()->id => ['role' => 'lead_auditor']]);

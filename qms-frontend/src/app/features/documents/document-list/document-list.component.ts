@@ -678,13 +678,16 @@ import { PdfViewerModule } from 'ng2-pdf-viewer';
 </div>
 
 }
+@if (toast()) {
+  <div class="toast" [class]="'toast-' + toast()!.type">{{ toast()!.msg }}</div>
+}
   `,
   styles: [`
     /* ── Stats ── */
     .stats-row { display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap }
     .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px 20px; flex:1; min-width:110px; text-align:center; transition:box-shadow .15s; cursor:default }
     .stat-card:hover { box-shadow:0 2px 12px rgba(0,0,0,.08) }
-    .stat-num { font-family:'Syne',sans-serif; font-size:28px; font-weight:800; line-height:1 }
+    .stat-num { font-family:'Inter',sans-serif; font-size:28px; font-weight:800; line-height:1 }
     .stat-lbl { font-size:11px; color:var(--text2); margin-top:4px; text-transform:uppercase; letter-spacing:.5px }
 
     /* ── Toolbar ── */
@@ -777,6 +780,7 @@ export class DocumentListComponent implements OnInit, OnDestroy {
   @ViewChild('versionFileInput') versionFileInput!: ElementRef;
 
   items = signal<any[]>([]);
+  toast = signal<{msg:string,type:string}|null>(null);
   loading = signal(true);
   total = signal(0);
   page = signal(1);
@@ -932,7 +936,7 @@ export class DocumentListComponent implements OnInit, OnDestroy {
     this.savingDistrib.set(true);
     this.svc.distribute(d.id, this.selectedDeptIds).subscribe({
       next: () => { this.savingDistrib.set(false); this.reloadDetail(); this.load(); },
-      error: (e: any) => { this.savingDistrib.set(false); alert(e?.error?.message || 'Failed'); }
+      error: (e: any) => { this.savingDistrib.set(false); this.showToast(e?.error?.message || 'Failed', 'error'); }
     });
   }
 
@@ -996,36 +1000,36 @@ export class DocumentListComponent implements OnInit, OnDestroy {
     if (this.versionFile) fd.append('file', this.versionFile);
     this.svc.newVersion(d.id, fd).subscribe({
       next: () => { this.newVersionForm = { version: '', change_summary: '' }; this.versionFile = null; this.reloadDetail(); this.load(); },
-      error: (e: any) => alert(e?.error?.message || 'Failed to upload version')
+      error: (e: any) => this.showToast(e?.error?.message || 'Failed to upload version', 'error')
     });
   }
 
   doSubmitReview() {
     const d = this.detailDoc(); if (!d) return;
-    this.svc.submitForReview(d.id).subscribe({ next: () => { this.reloadDetail(); this.load(); this.loadStats(); }, error: (e: any) => alert(e?.error?.message || 'Failed') });
+    this.svc.submitForReview(d.id).subscribe({ next: () => { this.reloadDetail(); this.load(); this.loadStats(); }, error: (e: any) => this.showToast(e?.error?.message || 'Failed', 'error') });
   }
 
   doApprove() {
     const d = this.detailDoc(); if (!d) return;
-    this.svc.approve(d.id, {}).subscribe({ next: () => { this.reloadDetail(); this.load(); this.loadStats(); }, error: (e: any) => alert(e?.error?.message || 'Failed') });
+    this.svc.approve(d.id, {}).subscribe({ next: () => { this.reloadDetail(); this.load(); this.loadStats(); }, error: (e: any) => this.showToast(e?.error?.message || 'Failed', 'error') });
   }
 
   doReject() {
     const reason = prompt('Reason for rejection:'); if (!reason) return;
     const d = this.detailDoc(); if (!d) return;
-    this.svc.reject(d.id, reason).subscribe({ next: () => { this.reloadDetail(); this.load(); this.loadStats(); }, error: (e: any) => alert(e?.error?.message || 'Failed') });
+    this.svc.reject(d.id, reason).subscribe({ next: () => { this.reloadDetail(); this.load(); this.loadStats(); }, error: (e: any) => this.showToast(e?.error?.message || 'Failed', 'error') });
   }
 
   doObsolete() {
-    if (!confirm('Mark this document as obsolete?')) return;
+    
     const d = this.detailDoc(); if (!d) return;
-    this.svc.markObsolete(d.id).subscribe({ next: () => { this.reloadDetail(); this.load(); this.loadStats(); }, error: (e: any) => alert(e?.error?.message || 'Failed') });
+    this.svc.markObsolete(d.id).subscribe({ next: () => { this.reloadDetail(); this.load(); this.loadStats(); }, error: (e: any) => this.showToast(e?.error?.message || 'Failed', 'error') });
   }
 
   doDownload(d: any) {
     this.svc.download(d.id).subscribe({
       next: (r: any) => { if (r?.url) window.open(r.url, '_blank'); },
-      error: (e: any) => alert(e?.error?.message || 'File not found on server.')
+      error: (e: any) => this.showToast(e?.error?.message || 'File not found on server.', 'error')
     });
   }
 
@@ -1076,6 +1080,12 @@ export class DocumentListComponent implements OnInit, OnDestroy {
 
   fmt(s: string | null | undefined) { return (s || '').replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()); }
 
+  
+  showToast(msg: string, type: string): void {
+    this.toast.set({ msg, type });
+    setTimeout(() => this.toast.set(null), 3500);
+  }
+
   ngOnDestroy() { this.destroy$.next(); this.destroy$.complete(); }
 
   canDownload(doc: any): boolean {
@@ -1102,7 +1112,7 @@ export class DocumentListComponent implements OnInit, OnDestroy {
         this.pdfSrc = URL.createObjectURL(blob);
 
       },
-      error: () => alert('Unable to preview document')
+      error: () => this.showToast('Unable to preview document', 'error')
     });
 
   }
@@ -1131,7 +1141,7 @@ export class DocumentListComponent implements OnInit, OnDestroy {
 
         }
       },
-      error: (e: any) => alert(e?.error?.message || 'File not found on server.')
+      error: (e: any) => this.showToast(e?.error?.message || 'File not found on server.', 'error')
     });
   }
 

@@ -132,7 +132,7 @@ import { LanguageService } from '../../core/services/language.service';
 <!-- ═══════════════════════════════════════════
      CHARTS ROW 1 — Trend + Risk + Requests + CAPA
 ═══════════════════════════════════════════ -->
-@if(isQAFull()) {
+@if(isQAFull() || isQASupervisor()) {
 <div class="sec-label">{{ ar() ? 'التحليلات البيانية' : 'Analytics' }}</div>
 <div class="ch-row">
   <div class="card ch-wide">
@@ -330,7 +330,7 @@ import { LanguageService } from '../../core/services/language.service';
       <tbody>
         @if (loading()) { @for (i of [1,2,3,4]; track i) { <tr><td colspan="4"><div class="sk"></div></td></tr> } }
         @for (r of ncs(); track r.id) {
-          <tr class="trow" (click)="go('/nc')">
+          <tr class="trow" (click)="go('/nc-capa')">
             <td><span class="ref">{{ r.reference_no }}</span></td>
             <td class="clamp">{{ r.title }}</td>
             <td><span class="badge" [class]="sevCls(r.severity)">{{ r.severity }}</span></td>
@@ -353,7 +353,7 @@ import { LanguageService } from '../../core/services/language.service';
       <tbody>
         @if (loading()) { @for (i of [1,2,3,4]; track i) { <tr><td colspan="4"><div class="sk"></div></td></tr> } }
         @for (r of capas(); track r.id) {
-          <tr class="trow" (click)="go('/capa')">
+          <tr class="trow" (click)="go('/nc-capa/capas')">
             <td><span class="ref">{{ r.reference_no }}</span></td>
             <td class="clamp">{{ r.title }}</td>
             <td><span class="badge" [class]="priCls(r.priority)">{{ r.priority }}</span></td>
@@ -449,9 +449,12 @@ import { LanguageService } from '../../core/services/language.service';
   <div class="card">
     <div class="card-header">
       <div class="card-title">
-        {{ isQAFull() ? (ar()?'قائمة الانتظار وإدارة الفريق':'QA Queue & My Work') :
-           isDeptMgr() ? (ar()?'طلبات تنتظر موافقتي':'Pending My Approval') :
-           isQAOfficer() ? (ar()?'مهامي المسندة':'Assigned to Me') :
+        {{ isQAFull()       ? (ar()?'قائمة الانتظار وإدارة الفريق':'QA Queue & My Work') :
+           isQASupervisor() ? (ar()?'مهام الفريق المسندة إليّ':'Supervisor Queue') :
+           isDeptMgr()      ? (ar()?'طلبات تنتظر موافقتي':'Pending My Approval') :
+           isCompliance()   ? (ar()?'شكاوى وحالات الامتثال':'Compliance Queue') :
+           isAuditor()      ? (ar()?'جداول المراجعة الخاصة بي':'My Audit Schedule') :
+           (isQAOfficer())  ? (ar()?'مهامي المسندة':'Assigned to Me') :
            (ar()?'طلباتي النشطة':'My Active Requests') }}
       </div>
       <span class="badge badge-blue">{{ myTaskCount() }}</span>
@@ -469,7 +472,7 @@ import { LanguageService } from '../../core/services/language.service';
         </div>
       }
       @for (t of myTasks().capa_tasks || []; track t.id) {
-        <div class="task-item" (click)="go('/capa')">
+        <div class="task-item" (click)="go('/nc-capa/capas')">
           <div class="task-dot" style="background:var(--warning)"></div>
           <div class="task-body">
             <div class="task-title">{{ t.capa_title }}</div>
@@ -481,8 +484,11 @@ import { LanguageService } from '../../core/services/language.service';
       @if (!tasksLoading() && myTaskCount() === 0) {
         <div class="empty" style="padding:24px;text-align:center">
           <i class="fas fa-circle-check" style="font-size:22px;color:var(--success);margin-bottom:6px;display:block"></i>
-          {{ isDeptMgr() ? (ar()?'لا طلبات تنتظر موافقتك':'No requests pending your approval') :
-             isQAFull() ? (ar()?'لا طلبات في قائمة الانتظار':'QA queue is clear') :
+          {{ isDeptMgr()      ? (ar()?'لا طلبات تنتظر موافقتك':'No requests pending your approval') :
+             isQAFull()       ? (ar()?'لا طلبات في قائمة الانتظار':'QA queue is clear') :
+             isQASupervisor() ? (ar()?'لا توجد مهام معلقة للمتابعة':'Supervisor queue is clear') :
+             isCompliance()   ? (ar()?'لا شكاوى مفتوحة حالياً':'No open compliance cases') :
+             isAuditor()      ? (ar()?'لا مراجعات مجدولة':'No audits scheduled') :
              (ar()?'لا توجد مهام معلقة':'All caught up!') }}
         </div>
       }
@@ -568,7 +574,7 @@ import { LanguageService } from '../../core/services/language.service';
   `,
   styles: [`
     .dh { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; flex-wrap:wrap; gap:12px; }
-    .dh-greet { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; }
+    .dh-greet { font-family:'Inter',sans-serif; font-size:22px; font-weight:800; }
     .dh-sub { font-size:13px; color:var(--text2); margin-top:3px; }
     .dh-pills { display:flex; gap:8px; flex-wrap:wrap; }
     .pill { display:flex; align-items:center; gap:6px; padding:6px 12px; border-radius:20px; font-size:11px; font-weight:600; }
@@ -578,7 +584,7 @@ import { LanguageService } from '../../core/services/language.service';
     /* KPI Band */
     .kpi-band { display:flex; align-items:center; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px 20px; margin-bottom:4px; flex-wrap:wrap; overflow-x:auto; }
     .kpi { display:flex; flex-direction:column; align-items:center; flex:1; min-width:80px; padding:4px 10px; }
-    .kpi-v { font-family:'Syne',sans-serif; font-size:21px; font-weight:800; line-height:1.1; }
+    .kpi-v { font-family:'Inter',sans-serif; font-size:21px; font-weight:800; line-height:1.1; }
     .kpi-l { font-size:10px; color:var(--text2); font-weight:500; margin-top:2px; text-align:center; white-space:nowrap; }
     .kpi-sep { width:1px; height:36px; background:var(--border); flex-shrink:0; }
     /* Section Label */
@@ -602,7 +608,7 @@ import { LanguageService } from '../../core/services/language.service';
     .tag-down   { background:rgba(239,68,68,.12);  color:var(--danger); }
     .tag-warn   { background:rgba(245,158,11,.12); color:var(--warning); }
     .tag-neutral{ background:var(--surface2); color:var(--text2); }
-    .mc-val { font-family:'Syne',sans-serif; font-size:36px; font-weight:800; line-height:1; margin-bottom:6px; }
+    .mc-val { font-family:'Inter',sans-serif; font-size:36px; font-weight:800; line-height:1; margin-bottom:6px; }
     .mc-lbl { font-size:12px; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:.4px; }
     .mc-sub { font-size:11px; color:var(--text3); margin-top:3px; }
     /* Operational Cards */
@@ -617,7 +623,7 @@ import { LanguageService } from '../../core/services/language.service';
     .op-arr { font-size:13px; color:var(--text3); }
     .op-nums { display:flex; }
     .op-n { flex:1; text-align:center; }
-    .op-nv { font-family:'Syne',sans-serif; font-size:19px; font-weight:800; }
+    .op-nv { font-family:'Inter',sans-serif; font-size:19px; font-weight:800; }
     .op-nl { font-size:10px; color:var(--text3); font-weight:500; margin-top:1px; }
     .op-bar { height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
     .op-fill { height:100%; border-radius:2px; transition:width .7s ease; }
@@ -640,7 +646,7 @@ import { LanguageService } from '../../core/services/language.service';
     .hm-body { flex:1; min-width:0; }
     .hm-name { font-size:12px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .hm-status { font-size:10px; font-weight:600; margin-top:2px; display:flex; align-items:center; gap:3px; }
-    .hm-metric { font-family:'Syne',sans-serif; font-size:16px; font-weight:800; flex-shrink:0; }
+    .hm-metric { font-family:'Inter',sans-serif; font-size:16px; font-weight:800; flex-shrink:0; }
     /* Recent Records - 4 column */
     .rec-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
     @media(max-width:1400px){ .rec-grid { grid-template-columns:repeat(2,1fr); } }
@@ -673,7 +679,7 @@ import { LanguageService } from '../../core/services/language.service';
     .sla-strip { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px 24px; display:flex; align-items:center; gap:24px; cursor:pointer; transition:all .15s; margin-bottom:4px; }
     .sla-strip:hover { border-color:var(--accent); }
     .sla-item { text-align:center; min-width:80px; }
-    .sla-v { font-family:'Syne',sans-serif; font-size:26px; font-weight:800; }
+    .sla-v { font-family:'Inter',sans-serif; font-size:26px; font-weight:800; }
     .sla-l { font-size:10px; color:var(--text2); font-weight:500; margin-top:2px; }
     .sla-bar-wrap { flex:1; }
     .sla-bar-label { display:flex; justify-content:space-between; font-size:12px; color:var(--text2); margin-bottom:6px; }
@@ -729,15 +735,22 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   private charts: any[] = [];
   ar = () => this.lang.isArabic();
 
-  // ── Role computed signals — based on auth.currentUser() (immediately available) ──
-  private roleSlug  = computed(() => this.auth.currentUser()?.role?.slug ?? '');
-  private rolePerms = computed((): string[] => this.auth.currentUser()?.role?.permissions ?? []);
+  // ── Role computed signals ─────────────────────────────────────────────
+  private roleSlug  = computed(() => (this.auth.currentUser() as any)?.role?.slug ?? '');
+  private rolePerms = computed((): string[] => (this.auth.currentUser() as any)?.role?.permissions ?? []);
 
-  // Role booleans
-  isQAFull   = computed(() => ['super_admin','qa_manager'].includes(this.roleSlug()));
-  isDeptMgr  = computed(() => this.roleSlug() === 'dept_manager');
-  isQAOfficer= computed(() => this.roleSlug() === 'qa_officer');
-  isEmployee = computed(() => !this.isQAFull() && !this.isDeptMgr() && !this.isQAOfficer());
+  // Explicit role booleans — no catch-all fallbacks
+  isQAFull          = computed(() => ['super_admin','qa_manager'].includes(this.roleSlug()));
+  isQASupervisor    = computed(() => this.roleSlug() === 'quality_supervisor');
+  isQAOfficer       = computed(() => this.roleSlug() === 'qa_officer');
+  isQATeam          = computed(() => ['super_admin','qa_manager','quality_supervisor','qa_officer'].includes(this.roleSlug()));
+  isDeptMgr         = computed(() => this.roleSlug() === 'dept_manager');
+  isComplianceMgr   = computed(() => this.roleSlug() === 'compliance_manager');
+  isComplianceOfc   = computed(() => this.roleSlug() === 'compliance_officer');
+  isCompliance      = computed(() => ['compliance_manager','compliance_officer'].includes(this.roleSlug()));
+  isAuditor         = computed(() => this.roleSlug() === 'auditor');
+  isEmployee        = computed(() => this.roleSlug() === 'employee');
+  isClient          = computed(() => this.roleSlug() === 'client');
 
   // Permission check helper
   private hasPerm(perm: string): boolean {
@@ -746,7 +759,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     return perms.includes('*') || perms.includes(perm) || perms.includes(mod + '.*');
   }
 
-  // Module visibility — used in template @if guards
+  // Module visibility — permission-based
   canSeeVendors  = computed(() => this.hasPerm('vendor.view'));
   canSeeVisits   = computed(() => this.hasPerm('visit.view'));
   canSeeAudits   = computed(() => this.hasPerm('audit.view'));
@@ -756,13 +769,21 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   canSeeClients  = computed(() => this.hasPerm('visit.view'));
   canSeeSLA      = computed(() => this.hasPerm('sla.view'));
   canSeeReports  = computed(() => this.hasPerm('report.view'));
+  canSeeAdmin    = computed(() => this.hasPerm('admin.access'));
 
-  // Role label for greeting
+  // Role label for greeting bar
   roleLabel = computed(() => {
     const m: Record<string,string> = {
-      super_admin:'Super Administrator', qa_manager:'QA Manager',
-      qa_officer:'QA Officer',           dept_manager:'Department Manager',
-      auditor:'Auditor',                 employee:'Staff', client:'Client',
+      super_admin:        'Super Administrator',
+      qa_manager:         'QA Manager',
+      quality_supervisor: 'Quality Supervisor',
+      qa_officer:         'Quality Officer',
+      compliance_manager: 'Compliance Manager',
+      compliance_officer: 'Compliance Officer',
+      dept_manager:       'Department Manager',
+      auditor:            'Auditor',
+      employee:           'Staff',
+      client:             'Client',
     };
     return m[this.roleSlug()] ?? this.roleSlug();
   });
@@ -784,10 +805,11 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     const mk = (label:string, value:any, icon:string, col:string, tag:string, tagCls:string, tagIcon:string, sub:string|null, route:string, show = true) =>
       ({ label, value, icon, col, tag, tagCls, tagIcon, sub, route, show });
 
-    const reqLabel = this.isEmployee()   ? (a ? 'طلباتي' : 'My Requests')
-                   : this.isDeptMgr()    ? (a ? 'طلبات قسمي' : 'Dept Requests')
-                   : this.isQAOfficer()  ? (a ? 'مهامي' : 'My Tasks')
-                   :                      (a ? 'طلبات مفتوحة' : 'Open Requests');
+    const reqLabel = this.isEmployee()                        ? (a ? 'طلباتي'         : 'My Requests')
+                   : this.isDeptMgr()                         ? (a ? 'طلبات قسمي'     : 'Dept Requests')
+                   : (this.isQAOfficer() || this.isAuditor()) ? (a ? 'مهامي'           : 'My Tasks')
+                   : this.isCompliance()                      ? (a ? 'شكاوى مفتوحة'   : 'Open Complaints')
+                   :                                            (a ? 'طلبات مفتوحة'   : 'Open Requests');
 
     const reqSub   = this.isEmployee()
                    ? `${d.requests?.submitted??0} ${a ? 'مقدم' : 'submitted'}`
@@ -860,7 +882,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const all = [
       { key:'requests',  show:true,                    name:a?'الطلبات':'Requests',        icon:'fas fa-inbox',                 bg:'rgba(59,130,246,.12)',  col:'var(--accent)',  route:'/requests',  metric:d.requests?.open??0,                              metCol:d.requests?.overdue>0?DG:'var(--accent)', status:d.requests?.overdue>0?(a?'متأخرة':'Overdue'):(a?'طبيعي':'Normal'),           stCol:d.requests?.overdue>0?DG:OK, stIcon:d.requests?.overdue>0?dot:chk, warn:false, danger:d.requests?.overdue>0 },
-      { key:'nc',        show:true,                    name:a?'عدم المطابقة':'NC/CAPA',    icon:'fas fa-triangle-exclamation',  bg:'rgba(239,68,68,.12)',   col:'var(--danger)', route:'/nc',        metric:(d.nc_capa?.open_ncs??0)+(d.nc_capa?.open_capas??0),metCol:'var(--danger)', status:d.nc_capa?.overdue>0?(a?'متأخرة':'Overdue'):(a?'طبيعي':'Normal'),             stCol:d.nc_capa?.overdue>0?DG:OK, stIcon:d.nc_capa?.overdue>0?dot:chk, warn:false, danger:d.nc_capa?.overdue>0 },
+      { key:'nc',        show:true,                    name:a?'عدم المطابقة':'NC/CAPA',    icon:'fas fa-triangle-exclamation',  bg:'rgba(239,68,68,.12)',   col:'var(--danger)', route:'/nc-capa',        metric:(d.nc_capa?.open_ncs??0)+(d.nc_capa?.open_capas??0),metCol:'var(--danger)', status:d.nc_capa?.overdue>0?(a?'متأخرة':'Overdue'):(a?'طبيعي':'Normal'),             stCol:d.nc_capa?.overdue>0?DG:OK, stIcon:d.nc_capa?.overdue>0?dot:chk, warn:false, danger:d.nc_capa?.overdue>0 },
       { key:'risk',      show:this.canSeeRisks(),      name:a?'المخاطر':'Risk',            icon:'fas fa-fire-flame-curved',     bg:'rgba(239,68,68,.12)',   col:'var(--danger)', route:'/risk',      metric:d.risks?.critical??0,                             metCol:d.risks?.critical>0?DG:OK, status:d.risks?.critical>0?(a?'حرج':'Critical'):(a?'طبيعي':'Normal'),              stCol:d.risks?.critical>0?DG:OK, stIcon:d.risks?.critical>0?dot:chk, warn:false, danger:d.risks?.critical>0 },
       { key:'audits',    show:this.canSeeAudits(),     name:a?'المراجعات':'Audits',        icon:'fas fa-magnifying-glass-chart',bg:'rgba(99,102,241,.12)',  col:'var(--accent2)',route:'/audits',    metric:d.audits?.planned??0,                             metCol:'var(--accent2)', status:d.audits?.in_progress>0?(a?'جارية':'In Progress'):(a?'مخطط':'Planned'),    stCol:d.audits?.in_progress>0?WN:OK, stIcon:d.audits?.in_progress>0?dot:chk, warn:d.audits?.in_progress>0, danger:false },
       { key:'documents', show:true,                    name:a?'الوثائق':'Documents',       icon:'fas fa-folder-open',           bg:'rgba(16,185,129,.12)',  col:'var(--success)',route:'/documents', metric:d.documents?.approved??0,                         metCol:'var(--success)', status:d.documents?.expiring>0?(a?'ينتهي قريباً':'Expiring'):(a?'محدّث':'Current'),stCol:d.documents?.expiring>0?WN:OK, stIcon:d.documents?.expiring>0?clk:chk, warn:d.documents?.expiring>0, danger:false },
@@ -882,7 +904,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   overdueList() {
     const o = this.od(), items: any[] = [];
     (o?.requests||[]).slice(0,5).forEach((r:any)=>items.push({ ref:r.reference_no, title:r.title, due:r.due_date,              icon:'fas fa-inbox',              route:'/requests' }));
-    (o?.capas||[]).slice(0,5).forEach((c:any)=>items.push({ ref:c.reference_no,   title:c.title, due:c.target_date,            icon:'fas fa-circle-check',       route:'/capa' }));
+    (o?.capas||[]).slice(0,5).forEach((c:any)=>items.push({ ref:c.reference_no,   title:c.title, due:c.target_date,            icon:'fas fa-circle-check',       route:'/nc-capa/capas' }));
     (o?.complaints||[]).slice(0,5).forEach((c:any)=>items.push({ ref:c.reference_no, title:c.title, due:c.target_resolution_date, icon:'fas fa-comment-exclamation', route:'/complaints' }));
     return items;
   }

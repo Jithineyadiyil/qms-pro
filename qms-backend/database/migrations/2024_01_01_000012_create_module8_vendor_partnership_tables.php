@@ -50,7 +50,7 @@ return new class extends Migration
             $table->decimal('price_score', 4, 2)->nullable();
             $table->decimal('service_score', 4, 2)->nullable();
             $table->decimal('compliance_score', 4, 2)->nullable();
-            $table->decimal('overall_score', 4, 2)->storedAs('(quality_score + delivery_score + price_score + service_score + compliance_score) / 5');
+            $table->decimal('overall_score', 4, 2)->nullable()->default(null)->comment('MySQL stored: avg of all scores; set by application');
             $table->text('comments')->nullable();
             $table->text('recommendations')->nullable();
             $table->enum('status', ['draft', 'submitted', 'approved'])->default('draft');

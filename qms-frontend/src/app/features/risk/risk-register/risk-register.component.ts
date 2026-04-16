@@ -3,6 +3,7 @@ import { CommonModule, DatePipe, TitleCasePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
+import { AuthService } from '../../../core/services/auth.service';
 import { RiskService } from '../../../core/services/risk.service';
 import { UiEventService } from '../../../core/services/ui-event.service';
 import { LanguageService } from '../../../core/services/language.service';
@@ -374,7 +375,7 @@ import { LanguageService } from '../../../core/services/language.service';
     .stats-bar { display:flex; align-items:center; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px 20px; flex-wrap:wrap; gap:8px; }
     .stat-item { display:flex; flex-direction:column; align-items:center; padding:0 16px; }
     .stat-div  { width:1px; height:32px; background:var(--border); }
-    .stat-val  { font-family:'Syne',sans-serif; font-size:24px; font-weight:800; line-height:1; }
+    .stat-val  { font-family:'Inter',sans-serif; font-size:24px; font-weight:800; line-height:1; }
     .stat-lbl  { font-size:10px; color:var(--text2); margin-top:2px; text-transform:uppercase; letter-spacing:.4px; }
     .crit { color:var(--danger); } .high { color:#fb923c; } .med { color:var(--warning); } .low { color:var(--success); } .warn { color:var(--warning); }
 
@@ -395,7 +396,7 @@ import { LanguageService } from '../../../core/services/language.service';
     .heat-cell { height:48px; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; transition:all .15s; position:relative; }
     .heat-cell:hover { transform:scale(1.07); box-shadow:0 4px 14px rgba(0,0,0,.3); }
     .heat-active { outline:2px solid white; outline-offset:1px; }
-    .hc-n { font-family:'Syne',sans-serif; font-size:16px; font-weight:800; line-height:1; }
+    .hc-n { font-family:'Inter',sans-serif; font-size:16px; font-weight:800; line-height:1; }
     .hc-s { font-size:9px; opacity:.6; }
     .h-low  { background:rgba(16,185,129,.2); color:#10b981; }
     .h-med  { background:rgba(245,158,11,.25); color:#f59e0b; }
@@ -404,7 +405,7 @@ import { LanguageService } from '../../../core/services/language.service';
 
     /* Cell drill-down panel */
     .cell-panel { flex:1; min-width:220px; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:12px 14px; max-height:280px; overflow-y:auto; }
-    .cell-panel-title { font-family:'Syne',sans-serif; font-size:12px; font-weight:800; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+    .cell-panel-title { font-family:'Inter',sans-serif; font-size:12px; font-weight:800; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
     .cell-risk-row { display:flex; align-items:center; gap:8px; padding:7px 8px; border-radius:7px; cursor:pointer; transition:background .1s; margin-bottom:4px; }
     .cell-risk-row:hover { background:var(--border); }
     .ref-sm { font-family:monospace; font-size:10px; color:var(--accent); white-space:nowrap; }
@@ -415,9 +416,9 @@ import { LanguageService } from '../../../core/services/language.service';
     .filter-row  { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
     .search-box  { display:flex; align-items:center; gap:7px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:6px 11px; min-width:220px; }
     .search-box i { color:var(--text3); font-size:11px; }
-    .search-box input { background:none; border:none; outline:none; color:var(--text); font-size:12px; font-family:'DM Sans',sans-serif; flex:1; }
+    .search-box input { background:none; border:none; outline:none; color:var(--text); font-size:12px; font-family:'Inter',sans-serif; flex:1; }
     .search-box button { background:none; border:none; color:var(--text3); cursor:pointer; font-size:11px; }
-    .sel { background:var(--surface2); border:1px solid var(--border); border-radius:7px; color:var(--text); font-size:12px; font-family:'DM Sans',sans-serif; padding:6px 10px; outline:none; cursor:pointer; }
+    .sel { background:var(--surface2); border:1px solid var(--border); border-radius:7px; color:var(--text); font-size:12px; font-family:'Inter',sans-serif; padding:6px 10px; outline:none; cursor:pointer; }
     .total-badge { font-size:12px; font-weight:700; color:var(--text2); background:var(--surface2); border:1px solid var(--border); border-radius:7px; padding:5px 10px; }
     .table-wrap { overflow-x:auto; }
     table { width:100%; border-collapse:collapse; }
@@ -429,11 +430,11 @@ import { LanguageService } from '../../../core/services/language.service';
     .td-title { max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; font-size:13px; }
     .sm { font-size:11px; color:var(--text2); white-space:nowrap; }
     .tc { text-align:center; }
-    .fw7 { font-family:'Syne',sans-serif; font-weight:800; font-size:14px; }
+    .fw7 { font-family:'Inter',sans-serif; font-weight:800; font-size:14px; }
     .overdue { color:var(--danger) !important; font-weight:700; }
     .ref-code { font-family:monospace; font-size:11px; color:var(--accent); background:rgba(59,130,246,.08); padding:2px 6px; border-radius:4px; }
     .type-tag { font-size:10px; color:var(--text3); background:var(--surface2); border:1px solid var(--border); border-radius:4px; padding:1px 5px; text-transform:capitalize; }
-    .score-pill { display:inline-flex; align-items:center; justify-content:center; width:28px; height:22px; border-radius:6px; font-family:'Syne',sans-serif; font-weight:800; font-size:12px; }
+    .score-pill { display:inline-flex; align-items:center; justify-content:center; width:28px; height:22px; border-radius:6px; font-family:'Inter',sans-serif; font-weight:800; font-size:12px; }
     .ava { width:27px; height:27px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--accent2)); display:grid; place-items:center; font-size:11px; font-weight:800; color:#fff; }
     .row-actions { display:flex; gap:4px; opacity:0; transition:opacity .15s; }
     .tbl-row:hover .row-actions { opacity:1; }
@@ -445,7 +446,7 @@ import { LanguageService } from '../../../core/services/language.service';
     .empty-cell { text-align:center; color:var(--text3); padding:48px 20px !important; font-size:13px; }
     .empty-cell i { font-size:28px; margin-bottom:8px; display:block; }
     .empty-sub { font-size:11px; margin-top:6px; }
-    .link-btn { background:none; border:none; color:var(--accent); font-size:11px; cursor:pointer; text-decoration:underline; font-family:'DM Sans',sans-serif; }
+    .link-btn { background:none; border:none; color:var(--accent); font-size:11px; cursor:pointer; text-decoration:underline; font-family:'Inter',sans-serif; }
     .pagination { display:flex; align-items:center; gap:5px; padding:12px 16px; border-top:1px solid var(--border); flex-wrap:wrap; }
     .pg-info { font-size:11px; color:var(--text2); margin-right:auto; }
 
@@ -454,7 +455,7 @@ import { LanguageService } from '../../../core/services/language.service';
     .modal-lg { max-width:680px; }
     .modal-sm { max-width:400px; }
     .modal-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--border); }
-    .modal-title  { font-family:'Syne',sans-serif; font-size:15px; font-weight:800; display:flex; align-items:center; gap:8px; }
+    .modal-title  { font-family:'Inter',sans-serif; font-size:15px; font-weight:800; display:flex; align-items:center; gap:8px; }
     .modal-close  { width:30px; height:30px; border:1px solid var(--border); border-radius:7px; background:none; color:var(--text2); cursor:pointer; font-size:12px; }
     .modal-body   { padding:20px; overflow-y:auto; flex:1; }
     .modal-footer { padding:14px 20px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:8px; }
@@ -462,18 +463,18 @@ import { LanguageService } from '../../../core/services/language.service';
     .fg    { display:flex; flex-direction:column; gap:4px; }
     .fg-2  { grid-column:span 2; }
     .lbl   { font-size:11px; font-weight:700; color:var(--text2); text-transform:uppercase; letter-spacing:.4px; }
-    .fc    { background:var(--surface2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:13px; font-family:'DM Sans',sans-serif; padding:9px 12px; outline:none; width:100%; transition:border-color .13s; }
+    .fc    { background:var(--surface2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:13px; font-family:'Inter',sans-serif; padding:9px 12px; outline:none; width:100%; transition:border-color .13s; }
     .fc:focus { border-color:var(--accent); }
     select.fc option { background:var(--surface); }
     .form-err { background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.2); color:var(--danger); padding:10px 14px; border-radius:8px; font-size:12px; margin-top:10px; }
     .score-section { grid-column:span 2; display:flex; gap:16px; align-items:center; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:12px 16px; }
     .score-inputs  { flex:1; display:flex; gap:20px; flex-wrap:wrap; }
     .score-btns    { display:flex; gap:5px; margin-top:6px; }
-    .sb { width:34px; height:34px; border:1px solid var(--border); border-radius:8px; background:none; color:var(--text2); font-size:14px; font-family:'Syne',sans-serif; font-weight:800; cursor:pointer; transition:all .13s; }
+    .sb { width:34px; height:34px; border:1px solid var(--border); border-radius:8px; background:none; color:var(--text2); font-size:14px; font-family:'Inter',sans-serif; font-weight:800; cursor:pointer; transition:all .13s; }
     .sb:hover { background:var(--border); }
     .sb.sb-active { background:var(--accent); border-color:var(--accent); color:#fff; }
     .score-preview { display:flex; flex-direction:column; align-items:center; justify-content:center; width:80px; height:80px; border-radius:14px; flex-shrink:0; }
-    .sp-score { font-family:'Syne',sans-serif; font-size:28px; font-weight:800; line-height:1; }
+    .sp-score { font-family:'Inter',sans-serif; font-size:28px; font-weight:800; line-height:1; }
     .sp-lbl   { font-size:9px; opacity:.7; margin-top:1px; }
     .sp-lvl   { font-size:10px; font-weight:800; margin-top:2px; }
     .btn-danger { background:var(--danger); color:#fff; border:none; }
@@ -506,8 +507,13 @@ export class RiskRegisterComponent implements OnInit, OnDestroy {
     private svc: RiskService,
     private router: Router,
     private uiEvents: UiEventService,
-    public lang: LanguageService
-  ) {}
+    public lang: LanguageService, private auth: AuthService) {}
+
+
+  private slug = () => (this.auth.currentUser() as any)?.role?.slug ?? '';
+  canCreate = () => ['super_admin','qa_manager','quality_supervisor','compliance_manager'].includes(this.slug());
+  canEdit   = () => ['super_admin','qa_manager','quality_supervisor'].includes(this.slug());
+  canDelete = () => ['super_admin','qa_manager'].includes(this.slug());
 
   ngOnInit() {
     this.uiEvents.openNewForm$.pipe(takeUntil(this.destroy$)).subscribe(() => this.openForm());

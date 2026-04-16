@@ -1,0 +1,13 @@
+# Backend secrets — never commit
+qms-backend/.env
+qms-backend/.env.*
+!qms-backend/.env.example
+
+# Frontend
+qms-frontend/node_modules/
+qms-frontend/.angular/cache/
+qms-frontend/dist/
+
+# OS
+.DS_Store
+Thumbs.db

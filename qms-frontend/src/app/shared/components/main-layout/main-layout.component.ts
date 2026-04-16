@@ -41,7 +41,7 @@ interface NavLink {
 })
 export class MainLayoutComponent implements OnInit {
   // ── DI ─────────────────────────────────────────────────────────────────
-  readonly auth = inject(AuthService);
+  readonly auth = inject(AuthService) as AuthService;
   private readonly router = inject(Router);
 
   // ── State ───────────────────────────────────────────────────────────────
@@ -54,26 +54,42 @@ export class MainLayoutComponent implements OnInit {
   // ── Nav structure ───────────────────────────────────────────────────────
 
   /** Core QMS modules — always visible */
-  readonly coreLinks: NavLink[] = [
-    { label: 'Dashboard',   icon: '⊞',  route: '/dashboard' },
-    { label: 'Requests',    icon: '📋', route: '/requests' },
-    { label: 'NC / CAPA',   icon: '⚠️',  route: '/nc-capa' },
-    { label: 'Risk',        icon: '🛡️',  route: '/risk' },
-    { label: 'Documents',   icon: '📄', route: '/documents' },
-    { label: 'Audits',      icon: '🔍', route: '/audits' },
-    { label: 'Complaints',  icon: '📣', route: '/complaints' },
-    { label: 'Visits',      icon: '🤝', route: '/visits' },
+  // All possible nav links — each carries the permission required to see it
+  private readonly _allCoreLinks: NavLink[] = [
+    { label: 'Dashboard',  icon: '⊞',  route: '/dashboard'  },
+    { label: 'Requests',   icon: '📋', route: '/requests',   permission: 'request.view'   },
+    { label: 'NC / CAPA',  icon: '⚠️',  route: '/nc-capa',   permission: 'nc.view'        },
+    { label: 'Risk',       icon: '🛡️',  route: '/risk',       permission: 'risk.view'      },
+    { label: 'Documents',  icon: '📄', route: '/documents',  permission: 'document.view'  },
+    { label: 'Audits',     icon: '🔍', route: '/audits',     permission: 'audit.view'     },
+    { label: 'Complaints', icon: '📣', route: '/complaints', permission: 'complaint.view' },
+    { label: 'Visits',     icon: '🤝', route: '/visits',     permission: 'visit.view'     },
   ];
 
-  /** Operational modules */
-  readonly operationalLinks: NavLink[] = [
-    { label: 'SLA',         icon: '📊', route: '/sla' },
-    { label: 'OKR / KPI',   icon: '🎯', route: '/okr' },
-    { label: 'Vendors',     icon: '🏢', route: '/vendors' },
-    { label: 'Surveys',     icon: '⭐', route: '/surveys' },
-    { label: 'Reports',     icon: '📈', route: '/reports' },
-    { label: 'Settings',    icon: '⚙️',  route: '/settings' },
+  private readonly _allOperationalLinks: NavLink[] = [
+    { label: 'SLA',        icon: '📊', route: '/sla',      permission: 'sla.view'     },
+    { label: 'OKR / KPI',  icon: '🎯', route: '/okr',      permission: 'okr.view'     },
+    { label: 'Vendors',    icon: '🏢', route: '/vendors',   permission: 'vendor.view'  },
+    { label: 'Surveys',    icon: '⭐', route: '/surveys',   permission: 'survey.view'  },
+    { label: 'Reports',    icon: '📈', route: '/reports',   permission: 'report.view'  },
+    { label: 'Settings',   icon: '⚙️',  route: '/settings', permission: 'admin.access' },
   ];
+
+  /** Filtered nav links — only what this user's role permits */
+  get coreLinks(): NavLink[] {
+    return this._allCoreLinks.filter(l => !l.permission || this._hasPerm(l.permission));
+  }
+  get operationalLinks(): NavLink[] {
+    return this._allOperationalLinks.filter(l => !l.permission || this._hasPerm(l.permission));
+  }
+
+  /** Permission check using the user's role permissions array */
+  private _hasPerm(perm: string): boolean {
+    const user = this.auth.currentUser() as any;
+    const perms: string[] = user?.role?.permissions ?? [];
+    const mod = perm.split('.')[0];
+    return perms.includes('*') || perms.includes(perm) || perms.includes(mod + '.*');
+  }
 
   // ── Lifecycle ───────────────────────────────────────────────────────────
 
@@ -91,23 +107,26 @@ export class MainLayoutComponent implements OnInit {
    * Current user's display name from the auth signal.
    */
   get userName(): string {
-    return this.auth.currentUser()?.name ?? 'User';
+    const u = this.auth.currentUser() as { name?: string } | null;
+    return u?.name ?? 'User';
   }
 
   /**
    * Current user's role label from the auth signal.
    */
   get userRole(): string {
-    return this.auth.currentUser()?.role?.name ?? '';
+    const u = this.auth.currentUser() as { role?: { name?: string } } | null;
+    return u?.role?.name ?? '';
   }
 
   /**
    * Avatar initials derived from the user's name.
    */
   get initials(): string {
-    return (this.auth.currentUser()?.name ?? 'U')
+    const u = this.auth.currentUser() as { name?: string } | null;
+    return (u?.name ?? 'U')
       .split(' ')
-      .map(w => w[0])
+      .map((w: string) => w[0])
       .slice(0, 2)
       .join('')
       .toUpperCase();
