@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\AuditController;
 use App\Http\Controllers\Api\VisitController;
 use App\Http\Controllers\Api\SlaController;
+use App\Http\Controllers\Api\SurveyController;
 use App\Http\Controllers\Api\OkrController;
 use App\Http\Controllers\Api\VendorController;
 use App\Http\Controllers\Api\AdminController;
@@ -148,6 +149,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/',             [NonconformanceController::class, 'store']);
         Route::get('/stats',         [NonconformanceController::class, 'stats']);
         Route::get('/categories',    [NonconformanceController::class, 'categories']);
+        Route::get('/users',         [NonconformanceController::class, 'users']);
+        Route::get('/departments',   [NonconformanceController::class, 'departments']);
         Route::get('/{id}',          [NonconformanceController::class, 'show']);
         Route::put('/{id}',          [NonconformanceController::class, 'update']);
         Route::delete('/{id}',       [NonconformanceController::class, 'destroy']);
@@ -158,10 +161,13 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('capas')->group(function () {
-        Route::get('/',     [CapaController::class, 'index']);
-        Route::post('/',    [CapaController::class, 'store']);
-        Route::get('/stats',[CapaController::class, 'stats']);
-        Route::get('/{id}', [CapaController::class, 'show']);
+        Route::get('/',          [CapaController::class, 'index']);
+        Route::post('/',         [CapaController::class, 'store']);
+        Route::get('/stats',     [CapaController::class, 'stats']);
+        Route::get('/open-ncs',  [CapaController::class, 'openNcs']);
+        Route::get('/users',     [CapaController::class, 'users']);
+        Route::get('/departments',[CapaController::class, 'departments']);
+        Route::get('/{id}',      [CapaController::class, 'show']);
         Route::put('/{id}', [CapaController::class, 'update']);
         Route::delete('/{id}', [CapaController::class, 'destroy']);
         Route::post('/{id}/tasks',                       [CapaController::class, 'addTask']);
@@ -178,6 +184,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/stats',       [RiskController::class, 'stats']);
         Route::get('/matrix',      [RiskController::class, 'matrix']);
         Route::get('/categories',  [RiskController::class, 'categories']);
+        Route::get('/owners',      [RiskController::class, 'owners']);
+        Route::get('/departments', [RiskController::class, 'departments']);
         Route::get('/{id}',        [RiskController::class, 'show']);
         Route::put('/{id}',        [RiskController::class, 'update']);
         Route::delete('/{id}',     [RiskController::class, 'destroy']);
@@ -194,6 +202,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/stats',        [DocumentController::class, 'stats']);
         Route::get('/categories',   [DocumentController::class, 'categories']);
         Route::get('/expiring',     [DocumentController::class, 'expiring']);
+        Route::get('/users',        [DocumentController::class, 'users']);
+        Route::get('/departments',  [DocumentController::class, 'departments']);
         Route::get('/{id}',         [DocumentController::class, 'show']);
         Route::put('/{id}',         [DocumentController::class, 'update']);
         Route::delete('/{id}',      [DocumentController::class, 'destroy']);
@@ -215,6 +225,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/stats',        [AuditController::class, 'stats']);
         Route::get('/programs',     [AuditController::class, 'programs']);
         Route::post('/programs',    [AuditController::class, 'createProgram']);
+        Route::get('/users',        [AuditController::class, 'users']);
+        Route::get('/departments',  [AuditController::class, 'departments']);
         Route::get('/{id}',         [AuditController::class, 'show']);
         Route::put('/{id}',         [AuditController::class, 'update']);
         Route::delete('/{id}',      [AuditController::class, 'destroy']);
@@ -234,6 +246,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('clients')->group(function () {
         Route::get('/',        [VisitController::class, 'clients']);
         Route::post('/',       [VisitController::class, 'storeClient']);
+        Route::get('/users',   [VisitController::class, 'users']);
+        Route::get('/stats',   [VisitController::class, 'stats']);
         Route::get('/{id}',    [VisitController::class, 'showClient']);
         Route::put('/{id}',    [VisitController::class, 'updateClient']);
         Route::get('/{id}/visits', [VisitController::class, 'clientVisits']);
@@ -244,6 +258,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/',         [VisitController::class, 'store']);
         Route::get('/stats',     [VisitController::class, 'stats']);
         Route::get('/calendar',  [VisitController::class, 'calendar']);
+        Route::get('/clients',   [VisitController::class, 'clients']);
+        Route::get('/users',     [VisitController::class, 'users']);
         Route::get('/{id}',      [VisitController::class, 'show']);
         Route::put('/{id}',      [VisitController::class, 'update']);
         Route::delete('/{id}',   [VisitController::class, 'destroy']);
@@ -274,12 +290,37 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{id}/measurements',     [SlaController::class, 'measurements']);
     });
 
+    // ── SURVEYS / CSAT ────────────────────────────────────────────────────────
+    Route::prefix('surveys')->group(function () {
+        Route::get('/',              [SurveyController::class, 'index']);
+        Route::post('/',             [SurveyController::class, 'store']);
+        Route::get('/stats',         [SurveyController::class, 'stats']);
+        Route::get('/users',         [SurveyController::class, 'users']);
+        Route::get('/clients',       [SurveyController::class, 'clients']);
+        Route::get('/departments',   [SurveyController::class, 'departments']);
+        Route::get('/{id}',          [SurveyController::class, 'show']);
+        Route::put('/{id}',          [SurveyController::class, 'update']);
+        Route::delete('/{id}',       [SurveyController::class, 'destroy']);
+        Route::post('/{id}/activate',[SurveyController::class, 'activate']);
+        Route::post('/{id}/close',   [SurveyController::class, 'close']);
+        Route::post('/{id}/pause',   [SurveyController::class, 'pause']);
+        Route::get('/{id}/responses',[SurveyController::class, 'responses']);
+        Route::post('/{id}/responses',[SurveyController::class, 'submitResponse']);
+        Route::get('/{id}/analytics',[SurveyController::class, 'analytics']);
+        Route::get('/{id}/questions',[SurveyController::class, 'questions']);
+        Route::post('/{id}/questions',[SurveyController::class, 'addQuestion']);
+        Route::put('/{id}/questions/{qid}',[SurveyController::class, 'updateQuestion']);
+        Route::delete('/{id}/questions/{qid}',[SurveyController::class, 'deleteQuestion']);
+    });
+
     Route::prefix('objectives')->group(function () {
         Route::get('/',       [OkrController::class, 'index']);
         Route::post('/',      [OkrController::class, 'store']);
         Route::get('/stats',  [OkrController::class, 'stats']);
-        Route::get('/tree',   [OkrController::class, 'tree']);
-        Route::get('/{id}',   [OkrController::class, 'show']);
+        Route::get('/tree',       [OkrController::class, 'tree']);
+        Route::get('/users',      [OkrController::class, 'users']);
+        Route::get('/departments',[OkrController::class, 'departments']);
+        Route::get('/{id}',       [OkrController::class, 'show']);
         Route::put('/{id}',   [OkrController::class, 'update']);
         Route::delete('/{id}',[OkrController::class, 'destroy']);
         Route::get('/{id}/key-results',               [OkrController::class, 'keyResults']);
@@ -331,6 +372,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/',            [ComplaintController::class, 'store']);
         Route::get('/stats',        [ComplaintController::class, 'stats']);
         Route::get('/categories',   [ComplaintController::class, 'categories']);
+        Route::get('/users',        [ComplaintController::class, 'users']);
+        Route::get('/clients',      [ComplaintController::class, 'clients']);
+        Route::get('/departments',  [ComplaintController::class, 'departments']);
         Route::get('/{id}',         [ComplaintController::class, 'show']);
         Route::put('/{id}',         [ComplaintController::class, 'update']);
         Route::delete('/{id}',      [ComplaintController::class, 'destroy']);
