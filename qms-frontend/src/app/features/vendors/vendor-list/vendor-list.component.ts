@@ -1,4 +1,6 @@
-import { Component, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, signal, computed } from '@angular/core';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
 import { Subject, takeUntil } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -199,11 +201,44 @@ import { LanguageService } from '../../../core/services/language.service';
             <input class="form-control" [(ngModel)]="form.address">
           </div>
         </div>
+
+        <!-- ── Vendor Documents ── -->
+        <div style="margin-top:16px">
+          <label class="form-label" style="margin-bottom:6px;display:block">📎 Documents <small style="color:#64748b;font-weight:400">(certificates, registration, agreements)</small></label>
+          <div [class.dz-over]="vendorDragging()"
+               (dragover)="vendorDragOver($event)" (dragleave)="vendorDragging.set(false)"
+               (drop)="vendorDrop($event)" (click)="vendorFileInput.click()"
+               style="border:2px dashed var(--border2,#2a3450);border-radius:8px;padding:14px;text-align:center;cursor:pointer;transition:border-color .2s">
+            <span style="font-size:1.4rem">📎</span>
+            <p style="margin:4px 0 2px;font-size:.85rem;color:var(--text2,#94a3b8)">Click or drag files here</p>
+            <small style="color:#4b6390;font-size:.75rem">PDF, Word, Excel, Images · Max 20 MB</small>
+            <input #vendorFileInput type="file" multiple
+                   accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                   style="display:none" (change)="vendorFilePick($event)">
+          </div>
+          @if (vendorAttachments().length > 0) {
+            <ul style="list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:4px">
+              @for (f of vendorAttachments(); track f.path; let i = $index) {
+                <li style="display:flex;align-items:center;gap:8px;background:var(--surface2,#0f1628);border:1px solid var(--border2,#1e2845);border-radius:6px;padding:6px 10px">
+                  <span>{{ vendorFileIcon(f.name) }}</span>
+                  <span style="flex:1;font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ f.name }}</span>
+                  <span style="font-size:.72rem;color:#4b6390">{{ vendorFmtSize(f.size) }}</span>
+                  @if (f.uploading) { <span style="font-size:.72rem;color:#60a5fa">Uploading…</span> }
+                  @else if (f.error) { <span style="font-size:.72rem;color:#f87171">{{ f.error }}</span> }
+                  @else { <a [href]="f.url" target="_blank" style="font-size:.75rem;color:var(--accent,#4f8ef7);text-decoration:none">↗ Open</a> }
+                  <button type="button" (click)="vendorRemoveFile(i)"
+                          style="background:none;border:none;cursor:pointer;color:#4b6390;font-size:.85rem;padding:2px 4px">✕</button>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+
         @if (formError()) { <div class="alert-error" style="margin-top:12px">{{ formError() }}</div> }
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" (click)="showForm=false">Cancel</button>
-        <button class="btn btn-primary" (click)="submit()" [disabled]="saving()">
+        <button class="btn btn-primary" (click)="submit()" [disabled]="saving() || vendorAnyUploading()">
           <i class="fas fa-save"></i> {{ saving() ? 'Saving…' : (editId ? 'Save Changes' : 'Add Vendor') }}
         </button>
       </div>
@@ -576,6 +611,9 @@ export class VendorListComponent implements OnInit, OnDestroy {
 
   search = ''; filterStatus = ''; filterRisk = '';
   showForm = false; saving = signal(false); formError = signal('');
+  vendorAttachments  = signal<{name:string;size:number;path:string;url:string;uploading:boolean;error:string|null}[]>([]);
+  vendorDragging     = signal(false);
+  vendorAnyUploading = computed(() => this.vendorAttachments().some(f => f.uploading));
   editId: number | null = null;
   activeTab = 'overview';
   openAddContract = false;
@@ -599,7 +637,7 @@ export class VendorListComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private searchTimer: any;
 
-  constructor(private svc: VendorService, private uiEvents: UiEventService, public lang: LanguageService, public auth: AuthService) {}
+  constructor(private http: HttpClient, private svc: VendorService, private uiEvents: UiEventService, public lang: LanguageService, public auth: AuthService) {}
 
 
   private slug = () => (this.auth.currentUser() as any)?.role?.slug ?? '';
@@ -611,7 +649,8 @@ export class VendorListComponent implements OnInit, OnDestroy {
     this.uiEvents.openNewForm$.pipe(takeUntil(this.destroy$)).subscribe(() => this.openCreate());
     this.load();
     this.loadStats();
-    this.svc.categories().subscribe({ next: (r: any) => this.categories.set(r || []) });
+    this.loadCategories();
+
   }
 
   load() {
@@ -653,15 +692,51 @@ export class VendorListComponent implements OnInit, OnDestroy {
     this.formError.set(''); this.showForm = true;
   }
 
+  loadCategories(): void {
+    this.svc.categories().subscribe({
+      next: (r: any) => {
+        // API returns plain array OR {data:[...]} — handle both
+        const cats = Array.isArray(r) ? r : (r?.data ?? []);
+        this.categories.set(cats);
+      },
+      error: (e: any) => {
+        console.error('Failed to load vendor categories:', e?.status, e?.error);
+      }
+    });
+  }
+
+  // ── Vendor document helpers ──────────────────────────────────────────────
+  vendorDragOver(e: DragEvent) { e.preventDefault(); e.stopPropagation(); this.vendorDragging.set(true); }
+  vendorDrop(e: DragEvent) { e.preventDefault(); e.stopPropagation(); this.vendorDragging.set(false); Array.from(e.dataTransfer?.files??[]).forEach(f=>this.vendorUploadFile(f)); }
+  vendorFilePick(e: Event) { Array.from((e.target as HTMLInputElement).files??[]).forEach(f=>this.vendorUploadFile(f)); (e.target as HTMLInputElement).value=''; }
+  vendorRemoveFile(i: number) {
+    const f = this.vendorAttachments()[i];
+    if (f.path) this.http.delete(`${environment.apiUrl}/attachments/delete`,{body:{path:f.path}}).subscribe();
+    this.vendorAttachments.update(l=>l.filter((_,j)=>j!==i));
+  }
+  private vendorUploadFile(file: File) {
+    if (file.size > 20*1024*1024) { alert(`"${file.name}" exceeds 20 MB`); return; }
+    const entry = {name:file.name,size:file.size,path:'',url:'',uploading:true,error:null as string|null};
+    this.vendorAttachments.update(l=>[...l,entry]);
+    const idx = this.vendorAttachments().length-1;
+    const fd = new FormData(); fd.append('file',file); fd.append('module','vendors');
+    this.http.post<{data:{path:string;url:string}}>(`${environment.apiUrl}/attachments/upload`,fd).subscribe({
+      next: r => this.vendorAttachments.update(l=>l.map((f,i)=>i===idx?{...f,path:r.data.path,url:r.data.url,uploading:false}:f)),
+      error:(e:HttpErrorResponse)=>this.vendorAttachments.update(l=>l.map((f,i)=>i===idx?{...f,uploading:false,error:e.error?.message||'Upload failed'}:f))
+    });
+  }
+  vendorFileIcon(n:string){const m:Record<string,string>={pdf:'📄',doc:'📝',docx:'📝',xls:'📊',xlsx:'📊',jpg:'🖼️',jpeg:'🖼️',png:'🖼️'};return m[n.split('.').pop()?.toLowerCase()??'']??'📎';}
+  vendorFmtSize(b:number){if(!b)return'';if(b<1024)return b+'B';if(b<1048576)return(b/1024).toFixed(1)+'KB';return(b/1048576).toFixed(1)+'MB';}
+
   submit() {
     if (!this.form.name.trim()) { this.formError.set('Name is required.'); return; }
     this.saving.set(true); this.formError.set('');
-    const payload = { ...this.form };
+    const payload = { ...this.form, document_paths: this.vendorAttachments().filter(f=>f.path&&!f.error&&!f.uploading).map(f=>f.path) };
     if (!payload.category_id) delete payload.category_id;
     const call = this.editId ? this.svc.update(this.editId, payload) : this.svc.create(payload);
     call.subscribe({
       next: (r: any) => {
-        this.saving.set(false); this.showForm = false;
+        this.saving.set(false); this.showForm = false; this.vendorAttachments.set([]);
         this.load(); this.loadStats();
         if (this.detail()?.id === this.editId) this.detail.set({ ...this.detail(), ...r });
       },

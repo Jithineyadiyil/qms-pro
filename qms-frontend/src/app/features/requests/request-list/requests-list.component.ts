@@ -1,4 +1,6 @@
 import { Component, OnDestroy, OnInit, signal, computed } from '@angular/core';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
 import { Subject, takeUntil } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -306,6 +308,41 @@ import { AuthService } from '../../../core/services/auth.service';
           </div>
         </div>
 
+        <!-- ── Attachments ── -->
+        <div class="form-group fg-full" style="margin-top:4px">
+          <label class="form-label">Attachments</label>
+          <div class="attach-dropzone"
+               [class.dz-over]="isDragging()"
+               (dragover)="onModalDragOver($event)"
+               (dragleave)="onModalDragLeave()"
+               (drop)="onModalDrop($event)"
+               (click)="modalFileInput.click()"
+               style="border:2px dashed var(--border2,#2a3450);border-radius:8px;padding:14px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s">
+            <span style="font-size:1.4rem">📎</span>
+            <p style="margin:4px 0 2px;font-size:.85rem;color:var(--text2,#94a3b8)">Click or drag files here</p>
+            <small style="color:#4b6390;font-size:.75rem">PDF, Word, Excel, Images · Max 20 MB</small>
+            <input #modalFileInput type="file" multiple
+                   accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.txt,.csv"
+                   style="display:none" (change)="onModalFilePick($event)">
+          </div>
+          @if (attachments().length > 0) {
+            <ul style="list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:4px">
+              @for (f of attachments(); track f.path; let i = $index) {
+                <li style="display:flex;align-items:center;gap:8px;background:var(--surface2,#0f1628);border:1px solid var(--border2,#1e2845);border-radius:6px;padding:6px 10px">
+                  <span>{{ fileIcon(f.name) }}</span>
+                  <span style="flex:1;font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ f.name }}</span>
+                  <span style="font-size:.72rem;color:#4b6390">{{ fmtSize(f.size) }}</span>
+                  @if (f.uploading) { <span style="font-size:.72rem;color:#60a5fa">Uploading…</span> }
+                  @else if (f.error) { <span style="font-size:.72rem;color:#f87171">{{ f.error }}</span> }
+                  @else { <a [href]="f.url" target="_blank" style="font-size:.75rem;color:var(--accent,#4f8ef7);text-decoration:none">↗</a> }
+                  <button type="button" (click)="removeAttachment(i)"
+                          style="background:none;border:none;cursor:pointer;color:#4b6390;font-size:.85rem;padding:2px 4px">✕</button>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+
         <!-- Dynamic routing note -->
         <div class="info-note" [style.border-color]="form.target_department==='compliance' ? 'rgba(139,92,246,.3)' : 'rgba(59,130,246,.2)'"
              [style.background]="form.target_department==='compliance' ? 'rgba(139,92,246,.06)' : 'rgba(59,130,246,.06)'">
@@ -320,10 +357,10 @@ import { AuthService } from '../../../core/services/auth.service';
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" (click)="showForm=false">Cancel</button>
-        <button class="btn btn-secondary" (click)="submit('draft')" [disabled]="saving()">
+        <button class="btn btn-secondary" (click)="submit('draft')" [disabled]="saving() || anyUploading()">
           <i class="fas fa-save"></i> Save Draft
         </button>
-        <button class="btn btn-primary" (click)="submit('submit')" [disabled]="saving()">
+        <button class="btn btn-primary" (click)="submit('submit')" [disabled]="saving() || anyUploading()">
           <i class="fas fa-paper-plane"></i> {{ saving() ? 'Submitting…' : 'Submit Request' }}
         </button>
       </div>
@@ -454,6 +491,28 @@ import { AuthService } from '../../../core/services/auth.service';
                   <p style="font-size:13px;color:var(--text2);margin:0;line-height:1.7;white-space:pre-wrap">{{ detail()!.resolution }}</p>
                 </div>
               }
+
+              @if (detail()!.attachments?.length) {
+                <div class="detail-section">
+                  <div class="detail-section-title">
+                    <i class="fas fa-paperclip" style="margin-right:6px;color:var(--accent)"></i>Attachments
+                  </div>
+                  <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px">
+                    @for (path of detail()!.attachments!; track path) {
+                      <li style="display:flex;align-items:center;gap:8px;background:var(--surface2,#0f1628);border:1px solid var(--border2,#1e2845);border-radius:6px;padding:8px 12px">
+                        <span>{{ attachIcon(path) }}</span>
+                        <span style="flex:1;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text2)">
+                          {{ path.split('/').pop() }}
+                        </span>
+                        <a [href]="attachUrl(path)" target="_blank"
+                           style="font-size:12px;color:var(--accent);text-decoration:none;white-space:nowrap;padding:2px 8px;border:1px solid var(--accent);border-radius:4px">
+                          <i class="fas fa-download" style="margin-right:4px"></i>Open
+                        </a>
+                      </li>
+                    }
+                  </ul>
+                </div>
+              }
             </div>
           </div>
         }
@@ -547,14 +606,28 @@ import { AuthService } from '../../../core/services/auth.service';
 
             <!-- QA MANAGER: assign to QA officer -->
             @if (isQAManager() && detail()!.status === 'approved' && detail()!.target_department === 'quality') {
+
+              <!-- Accept: assign to self -->
+              <div class="action-card action-card-green">
+                <div class="action-card-title">
+                  <i class="fas fa-circle-check"></i> Accept &amp; Process
+                </div>
+                <p class="action-card-desc">
+                  Accept this request and take ownership — it will be assigned to you and moved to
+                  <strong>In Progress</strong>. You can also assign it to another QA team member below.
+                </p>
+                <button class="btn btn-sm" style="background:#10b981;color:#fff"
+                  (click)="doAcceptSelf()" [disabled]="savingAction()">
+                  <i class="fas fa-circle-check"></i> {{ savingAction() ? 'Processing…' : 'Accept & Assign to Me' }}
+                </button>
+              </div>
+
+              <!-- Assign to another officer -->
               <div class="action-card action-card-blue">
                 <div class="action-card-title">
                   <i class="fas fa-user-plus"></i> Assign to QA Officer / Specialist
                 </div>
-                <p class="action-card-desc">
-                  This request was approved by the Department Manager and assigned to you.
-                  Select a QA team member to process it.
-                </p>
+                <p class="action-card-desc">Select a QA team member to process this request.</p>
                 <div style="display:flex;gap:8px;margin-top:4px">
                   <select class="form-control" [(ngModel)]="assigneeId" style="flex:1">
                     <option value="">— Select QA team member —</option>
@@ -568,17 +641,50 @@ import { AuthService } from '../../../core/services/auth.service';
                   </button>
                 </div>
               </div>
+
+              <!-- Reject -->
+              <div class="action-card action-card-red">
+                <div class="action-card-title">
+                  <i class="fas fa-times-circle"></i> Reject Request
+                </div>
+                <p class="action-card-desc">
+                  Reject this request and notify the requester. Provide a clear reason.
+                </p>
+                <div class="form-group" style="margin-bottom:8px">
+                  <textarea class="form-control" rows="2" [(ngModel)]="rejectReason"
+                    placeholder="Reason for rejection *"></textarea>
+                </div>
+                <button class="btn btn-sm" style="background:#ef4444;color:#fff"
+                  (click)="doReject()" [disabled]="!rejectReason.trim() || savingAction()">
+                  <i class="fas fa-times"></i> {{ savingAction() ? 'Processing…' : 'Reject Request' }}
+                </button>
+              </div>
             }
 
-            <!-- COMPLIANCE MANAGER: assign to Compliance Officer -->
+            <!-- COMPLIANCE MANAGER: accept / assign / reject -->
             @if ((isComplianceMgr() || isQAManager()) && detail()!.status === 'approved' && detail()!.target_department === 'compliance') {
+
+              <!-- Accept: assign to self -->
+              <div class="action-card" style="border-left:3px solid #10b981;background:rgba(16,185,129,.05)">
+                <div class="action-card-title">
+                  <i class="fas fa-circle-check" style="color:#10b981"></i> Accept &amp; Process
+                </div>
+                <p class="action-card-desc">
+                  Accept this compliance request and take ownership — it will be assigned to you
+                  and moved to <strong>In Progress</strong>.
+                </p>
+                <button class="btn btn-sm" style="background:#10b981;color:#fff"
+                  (click)="doAcceptSelf()" [disabled]="savingAction()">
+                  <i class="fas fa-circle-check"></i> {{ savingAction() ? 'Processing…' : 'Accept & Assign to Me' }}
+                </button>
+              </div>
+
+              <!-- Assign to another officer -->
               <div class="action-card" style="border-left:3px solid #a78bfa;background:rgba(139,92,246,.05)">
                 <div class="action-card-title">
                   <i class="fas fa-user-plus" style="color:#a78bfa"></i> Assign to Compliance Officer
                 </div>
-                <p class="action-card-desc">
-                  This compliance request was approved. Select a Compliance Officer to process it.
-                </p>
+                <p class="action-card-desc">Select a Compliance Officer to process this request.</p>
                 <div style="display:flex;gap:8px;margin-top:4px">
                   <select class="form-control" [(ngModel)]="assigneeId" style="flex:1">
                     <option value="">— Select Compliance Officer —</option>
@@ -591,6 +697,24 @@ import { AuthService } from '../../../core/services/auth.service';
                     <i class="fas fa-user-check"></i> {{ savingAction() ? 'Assigning…' : 'Assign' }}
                   </button>
                 </div>
+              </div>
+
+              <!-- Reject -->
+              <div class="action-card action-card-red">
+                <div class="action-card-title">
+                  <i class="fas fa-times-circle"></i> Reject Request
+                </div>
+                <p class="action-card-desc">
+                  Reject this compliance request and notify the requester with a reason.
+                </p>
+                <div class="form-group" style="margin-bottom:8px">
+                  <textarea class="form-control" rows="2" [(ngModel)]="rejectReason"
+                    placeholder="Reason for rejection *"></textarea>
+                </div>
+                <button class="btn btn-sm" style="background:#ef4444;color:#fff"
+                  (click)="doReject()" [disabled]="!rejectReason.trim() || savingAction()">
+                  <i class="fas fa-times"></i> {{ savingAction() ? 'Processing…' : 'Reject Request' }}
+                </button>
               </div>
             }
 
@@ -644,6 +768,74 @@ import { AuthService } from '../../../core/services/auth.service';
                   <i class="fas fa-circle-check"></i> {{ savingAction() ? 'Closing…' : 'Close Request' }}
                 </button>
               </div>
+            }
+
+            <!-- SUPER ADMIN: full override for any status not covered above -->
+            @if (isSuperAdmin()) {
+              @if (detail()!.status === 'submitted') {
+                <!-- Super admin can act as dept manager -->
+                <div class="action-card action-card-green">
+                  <div class="action-card-title"><i class="fas fa-stamp"></i> Approve Request (Admin Override)</div>
+                  <p class="action-card-desc">Approve and forward this request to the Quality or Compliance team.</p>
+                  <div class="form-group" style="margin-bottom:8px">
+                    <textarea class="form-control" rows="2" [(ngModel)]="approveComment"
+                      placeholder="Approval comments (optional)…"></textarea>
+                  </div>
+                  <button class="btn btn-sm" style="background:#10b981;color:#fff"
+                    (click)="doApprove()" [disabled]="savingAction()">
+                    <i class="fas fa-check"></i> {{ savingAction() ? 'Processing…' : 'Approve & Forward' }}
+                  </button>
+                </div>
+                <div class="action-card action-card-red">
+                  <div class="action-card-title"><i class="fas fa-times-circle"></i> Reject Request (Admin Override)</div>
+                  <p class="action-card-desc">Reject and notify the requester with a reason.</p>
+                  <div class="form-group" style="margin-bottom:8px">
+                    <textarea class="form-control" rows="2" [(ngModel)]="rejectReason"
+                      placeholder="Reason for rejection *"></textarea>
+                  </div>
+                  <button class="btn btn-sm" style="background:#ef4444;color:#fff"
+                    (click)="doReject()" [disabled]="!rejectReason.trim() || savingAction()">
+                    <i class="fas fa-times"></i> {{ savingAction() ? 'Processing…' : 'Reject Request' }}
+                  </button>
+                </div>
+              }
+              @if (detail()!.status === 'approved') {
+                <!-- Super admin can assign to any team member -->
+                <div class="action-card action-card-blue">
+                  <div class="action-card-title"><i class="fas fa-user-plus"></i> Assign to Team Member (Admin Override)</div>
+                  <p class="action-card-desc">Assign this approved request to a QA or Compliance officer for processing.</p>
+                  <div style="display:flex;gap:8px;margin-top:4px">
+                    <select class="form-control" [(ngModel)]="assigneeId" style="flex:1">
+                      <option value="">— Select team member —</option>
+                      @for (u of qaUsers(); track u.id) {
+                        <option [value]="u.id">{{ u.name }} @if (u.role?.name) { ({{ u.role.name }}) }</option>
+                      }
+                    </select>
+                    <button class="btn btn-primary btn-sm" (click)="doAssign()"
+                      [disabled]="!assigneeId || savingAction()">
+                      <i class="fas fa-user-check"></i> {{ savingAction() ? 'Assigning…' : 'Assign' }}
+                    </button>
+                  </div>
+                </div>
+              }
+              @if (detail()!.status === 'draft') {
+                <div class="action-card-info">
+                  <i class="fas fa-circle-info"></i>
+                  <span>This request is still a <strong>Draft</strong>. The requester needs to submit it first.</span>
+                </div>
+              }
+              @if (detail()!.status === 'rejected') {
+                <div class="action-card-info">
+                  <i class="fas fa-circle-info"></i>
+                  <span>This request was <strong>Rejected</strong>. Check the Approval Log for the reason.</span>
+                </div>
+              }
+              @if (detail()!.status === 'closed') {
+                <div class="action-card-info">
+                  <i class="fas fa-circle-check" style="color:#10b981"></i>
+                  <span>This request is <strong>Closed</strong>. No further actions required.</span>
+                </div>
+              }
             }
 
             <!-- QA MANAGER can also close -->
@@ -909,9 +1101,11 @@ export class RequestsListComponent implements OnInit, OnDestroy {
   search = ''; filterStatus = ''; filterPriority = ''; filterType = '';
   activeTab = 'all';
 
-  showForm  = false;
-  saving    = signal(false);
-  formError = signal('');
+  showForm      = false;
+  saving        = signal(false);
+  formError     = signal('');
+  attachments   = signal<{name:string;size:number;path:string;url:string;uploading:boolean;error:string|null}[]>([]);
+  isDragging    = signal(false);
   toast = signal<{msg:string,type:string}|null>(null);
   form: any = {};
 
@@ -940,11 +1134,12 @@ export class RequestsListComponent implements OnInit, OnDestroy {
   isQAManager     = computed(() => ['super_admin','qa_manager'].includes(this._slug()));
   isQASupervisor  = computed(() => this._slug() === 'quality_supervisor');
   isQAOfficer     = computed(() => ['qa_officer','quality_supervisor'].includes(this._slug()));
-  isDeptManager   = computed(() => this._slug() === 'dept_manager');
+  isDeptManager   = computed(() => ['dept_manager', 'super_admin'].includes(this._slug()));
   isComplianceMgr = computed(() => this._slug() === 'compliance_manager');
   isComplianceOfc = computed(() => this._slug() === 'compliance_officer');
   isCompliance    = computed(() => ['compliance_manager','compliance_officer'].includes(this._slug()));
   isEmployee      = computed(() => this._slug() === 'employee');
+  isSuperAdmin    = computed(() => this._slug() === 'super_admin');
 
   canCreate = computed(() => {
     const perms: string[] = (this.auth.currentUser() as any)?.role?.permissions || [];
@@ -997,6 +1192,8 @@ export class RequestsListComponent implements OnInit, OnDestroy {
     private uiEvents: UiEventService,
     public lang: LanguageService,
     private auth: AuthService
+  ,
+    private http: HttpClient
   ) {}
 
   ngOnInit() {
@@ -1108,14 +1305,65 @@ export class RequestsListComponent implements OnInit, OnDestroy {
   openCreate() {
     this.form = { title: '', description: '', priority: 'medium', type: 'internal', category_id: '', due_date: '', target_department: 'quality' };
     this.formError.set('');
+    this.attachments.set([]);
+    this.form = {};
     this.showForm = true;
   }
+
+  // ── Attachment methods ─────────────────────────────────────────────────────
+  onModalDragOver(e: DragEvent) { e.preventDefault(); e.stopPropagation(); this.isDragging.set(true); }
+  onModalDragLeave()            { this.isDragging.set(false); }
+  onModalDrop(e: DragEvent)     { e.preventDefault(); e.stopPropagation(); this.isDragging.set(false); Array.from(e.dataTransfer?.files??[]).forEach(f => this.uploadAttachment(f)); }
+  onModalFilePick(e: Event)     { Array.from((e.target as HTMLInputElement).files??[]).forEach(f => this.uploadAttachment(f)); (e.target as HTMLInputElement).value = ''; }
+
+  uploadAttachment(file: File) {
+    if (file.size > 20 * 1024 * 1024) { alert(`"${file.name}" exceeds 20 MB limit.`); return; }
+    const entry = { name: file.name, size: file.size, path: '', url: '', uploading: true, error: null as string|null };
+    this.attachments.update(list => [...list, entry]);
+    const idx = this.attachments().length - 1;
+    const fd = new FormData(); fd.append('file', file);
+    this.http.post<{data:{path:string;url:string}}>(`${environment.apiUrl}/requests/upload-attachment`, fd).subscribe({
+      next: res => this.attachments.update(list => list.map((f,i) => i===idx ? {...f, path:res.data.path, url:res.data.url, uploading:false} : f)),
+      error: (e:HttpErrorResponse) => this.attachments.update(list => list.map((f,i) => i===idx ? {...f, uploading:false, error:e.error?.message??'Upload failed'} : f)),
+    });
+  }
+
+  removeAttachment(i: number) {
+    const f = this.attachments()[i];
+    if (f.path) this.http.delete(`${environment.apiUrl}/requests/delete-attachment`, {body:{path:f.path}}).subscribe();
+    this.attachments.update(list => list.filter((_,j) => j !== i));
+  }
+
+  /** Returns a public URL for a stored attachment path */
+  attachUrl(path: string): string {
+    return `${window.location.origin}/storage/${path}`;
+  }
+
+  /** Returns an emoji icon based on file extension (for detail view) */
+  attachIcon(path: string): string {
+    const ext = path.split('.').pop()?.toLowerCase() ?? '';
+    const m: Record<string,string> = {
+      pdf:'📄',doc:'📝',docx:'📝',xls:'📊',xlsx:'📊',
+      ppt:'📰',pptx:'📰',jpg:'🖼️',jpeg:'🖼️',png:'🖼️',gif:'🖼️',txt:'📃',csv:'📊'
+    };
+    return m[ext] ?? '📎';
+  }
+
+  fileIcon(name: string) {
+    const ext = (name.split('.').pop()??'').toLowerCase();
+    return ({pdf:'📄',doc:'📝',docx:'📝',xls:'📊',xlsx:'📊',ppt:'📰',pptx:'📰',jpg:'🖼️',jpeg:'🖼️',png:'🖼️',gif:'🖼️',txt:'📃',csv:'📊'} as any)[ext] ?? '📎';
+  }
+
+  fmtSize(b: number) { return b<1024?`${b}B`:b<1048576?`${(b/1024).toFixed(1)}KB`:`${(b/1048576).toFixed(1)}MB`; }
+
+  anyUploading = () => this.attachments().some(f => f.uploading);
 
   submit(action: 'draft' | 'submit') {
     if (!this.form.title?.trim())       { this.formError.set('Title is required.'); return; }
     if (!this.form.description?.trim()) { this.formError.set('Description is required.'); return; }
     this.saving.set(true); this.formError.set('');
-    const payload = { ...this.form };
+    const uploadedPaths = this.attachments().filter(f => f.path && !f.uploading && !f.error).map(f => f.path);
+    const payload = { ...this.form, attachments: uploadedPaths };
     if (!payload.category_id) delete payload.category_id;
     this.svc.create(payload).subscribe({
       next: (r: any) => {
@@ -1200,6 +1448,14 @@ export class RequestsListComponent implements OnInit, OnDestroy {
   }
 
   doReassign() { this.doAssign(); }
+
+  /** Accept & assign to self — sets assigneeId to current user then calls doAssign() */
+  doAcceptSelf() {
+    const userId = this.currentUserId();
+    if (!userId) return;
+    this.assigneeId = String(userId);
+    this.doAssign();
+  }
 
   doClose() {
     if (!this.closeResolution.trim()) return;

@@ -49,6 +49,22 @@ class VendorController extends Controller {
         $vendor->update(['qualification_status'=>'qualified','qualification_date'=>now()->toDateString(),'qualification_expiry'=>now()->addYear()->toDateString(),'status'=>'approved']);
         return response()->json($vendor->fresh());
     }
+    /** Returns id+name list of all active vendors — used by contract form dropdown. */
+    public function listDropdown() {
+        $vendors = \App\Models\Vendor::where('status', '!=', 'suspended')
+            ->orderBy('name')
+            ->get(['id', 'name', 'status', 'qualification_status']);
+        return response()->json($vendors);
+    }
+
+    /** Returns id+name list of users for owner/assignee dropdowns. */
+    public function users() {
+        $users = \App\Models\User::where('is_active', 1)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+        return response()->json($users);
+    }
+
     public function categories() { return response()->json(VendorCategory::orderBy('name')->get()); }
     public function stats() { return response()->json(['by_status'=>Vendor::selectRaw('status,count(*) as total')->groupBy('status')->get(),'by_qualification'=>Vendor::selectRaw('qualification_status,count(*) as total')->groupBy('qualification_status')->get()]); }
     // Partnerships
@@ -110,9 +126,6 @@ class VendorController extends Controller {
         $c = VendorContract::findOrFail($id);
         $c->update(['status' => 'terminated']);
         return response()->json($c->fresh(['vendor','owner']));
-    }
-    public function users() {
-        return response()->json(User::select('id','name','email')->where('is_active',1)->orderBy('name')->get());
     }
     public function vendorsList() {
         return response()->json(Vendor::whereIn('status',['active','approved'])->select('id','name','code','type')->orderBy('name')->get());

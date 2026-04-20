@@ -1,38 +1,45 @@
-# Validation Fix — Deployment
+# Admin Area — Full Fix
 
-## Copy this file
+## Step 1: Copy files
 
-```
-app/Http/Requests/StoreRequestForm.php
-→ D:\xamp new\htdocs\qms-pro\qms-backend\app\Http\Requests\StoreRequestForm.php
-```
+Backend:
+  app/Http/Controllers/Api/AdminController.php   ← NEW (categories, templates, settings)
+  app/Http/Controllers/Api/UserController.php    ← Updated (role_id filter, updateRole, updateDept)
+  app/Models/Department.php                      ← Updated (description in fillable)
+  routes/api.php                                 ← Updated (13 missing admin routes added)
+  database/migrations/2026_05_10_add_description_to_departments.php  ← NEW
 
-## Then clear cache
+Frontend:
+  src/app/features/settings/settings.component.ts  ← Updated (audit category added)
+
+## Step 2: Run migrations and seeders
 
 ```bash
+php artisan migrate
+php artisan db:seed --class=AdminSeeder
+php artisan route:clear
 php artisan cache:clear
-php artisan config:clear
 ```
+
+## Step 3: Verify
+
+Open Admin → Users tab → should show all users
+Open Admin → Departments tab → should show all departments
+Open Admin → Categories tab → should show 7 category types (request, nc, risk, document, vendor, complaint, audit)
+Open Admin → Email Templates tab → should show 16 templates
+Open Admin → System Settings tab → should show 22 settings in 4 groups
+Open Admin → Activity Log → should show recent activity
 
 ## What was fixed
 
-### Bug 1 — `risk_level` rejected 'critical'
-Old: `'risk_level' => 'required|in:low,medium,high'`
-New: `'risk_level' => 'required|in:low,medium,high,critical'`
-
-The form offered 'critical' as an option but the server rejected it.
-
-### Bug 2 — `required_if` fired even when field was absent (draft saves)
-Old: `'dynamic_fields.policy_name' => 'required_if:request_sub_type,new_policy|...'`
-New: `'dynamic_fields.policy_name' => 'sometimes|required_if:request_sub_type,new_policy|...'`
-
-`required_if` without `sometimes` means: "this field is required when condition is met,
-REGARDLESS of whether the key is present in the request body."
-
-`sometimes|required_if` means: "only validate this field IF it appears in the request.
-If dynamic_fields:{} is sent (draft save), skip validation entirely."
-
-This allows:
-- Draft save → `dynamic_fields: {}` → all dynamic rules skipped ✓
-- Full submit with policy sub-type → `dynamic_fields.policy_name` present and non-empty ✓
-- Full submit with policy sub-type → `dynamic_fields.policy_name` missing → FAILS (correct) ✓
+| Issue | Fix |
+|---|---|
+| 13 admin API routes missing | Added to api.php |
+| AdminController missing | Created (categories + templates + settings) |
+| updateRole() missing | Added to UserController |
+| updateDepartment() missing | Added to UserController |
+| role_id filter broken | Fixed in UserController.index() |
+| departments.description column missing | New migration |
+| Department model fillable missing description | Fixed |
+| Audit category type missing in frontend | Added |
+| AdminSeeder not run | Run in Step 2 above |

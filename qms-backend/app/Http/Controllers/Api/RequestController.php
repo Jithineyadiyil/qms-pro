@@ -205,10 +205,16 @@ class RequestController extends BaseController
     public function assign(Request $request, int $id): JsonResponse
     {
         $request->validate(['assignee_id' => 'required|exists:users,id']);
+
+        $allowedRoles = ['super_admin', 'qa_manager', 'compliance_manager', 'dept_manager'];
+        if (!in_array(auth()->user()->role->slug ?? '', $allowedRoles, true)) {
+            return $this->error('Forbidden — only managers may assign requests.', 403);
+        }
+
         $sr = ServiceRequest::findOrFail($id);
 
         $old = ['assignee_id' => $sr->assignee_id, 'status' => $sr->status];
-        $sr->update(['assignee_id' => $request->assignee_id, 'status' => 'under_review']);
+        $sr->update(['assignee_id' => $request->assignee_id, 'status' => 'in_progress']);
 
         $this->logActivity('requests', 'assign', $sr, $old);
         $this->sendNotification(
@@ -256,6 +262,12 @@ class RequestController extends BaseController
     public function reject(Request $request, int $id): JsonResponse
     {
         $request->validate(['reason' => 'required|string']);
+
+        $allowedRoles = ['super_admin', 'qa_manager', 'compliance_manager', 'dept_manager'];
+        if (!in_array(auth()->user()->role->slug ?? '', $allowedRoles, true)) {
+            return $this->error('Forbidden — only managers may reject requests.', 403);
+        }
+
         $sr = ServiceRequest::findOrFail($id);
 
         $sr->update(['status' => 'rejected']);

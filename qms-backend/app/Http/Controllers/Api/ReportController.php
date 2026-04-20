@@ -764,4 +764,26 @@ class ReportController extends Controller
         ]);
     }
 
+
+    // ── Export ────────────────────────────────────────────────────────────
+    // Simple CSV export — calls the relevant recordsXxx method and returns data
+    public function export(Request $request)
+    {
+        $module = $request->input('module', 'ncs');
+        $method = 'records' . ucfirst($module);
+
+        if (!method_exists($this, $method)) {
+            return response()->json(['message' => 'Unknown module: ' . $module], 422);
+        }
+
+        $result = $this->$method($request);
+        $data   = json_decode($result->getContent(), true);
+
+        return response()->json([
+            'success' => true,
+            'module'  => $module,
+            'count'   => $data['total'] ?? count($data['data'] ?? []),
+            'data'    => $data['data'] ?? [],
+        ]);
+    }
 }
